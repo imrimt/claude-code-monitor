@@ -14,6 +14,21 @@ vi.mock('node:os', async (importOriginal) => {
   };
 });
 
+// Mock isTtyAlive to return true for most TTYs, but false for specific test paths
+vi.mock('../src/utils/tty-cache.js', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../src/utils/tty-cache.js')>();
+  return {
+    ...original,
+    isTtyAlive: (tty: string | undefined) => {
+      if (!tty) return true;
+      // Return false for TTYs that are explicitly meant to not exist in tests
+      if (tty === '/dev/ttys999') return false;
+      // All other TTYs are treated as alive (for CI compatibility)
+      return true;
+    },
+  };
+});
+
 describe('file-store', () => {
   beforeEach(() => {
     if (existsSync(TEST_STORE_DIR)) {
