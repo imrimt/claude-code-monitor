@@ -4,9 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://www.apple.com/macos/)
 
-A CLI tool to monitor multiple Claude Code sessions in real-time from your terminal.
-
-> **Note**: This tool is **macOS only** due to its use of AppleScript for terminal focus features.
+**A CLI tool to monitor multiple Claude Code sessions in real-time from your terminal.**
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/onikan27/claude-code-monitor/main/docs/ccm-demo.gif" alt="Claude Code Monitor Demo" width="1000">
@@ -45,6 +43,8 @@ A CLI tool to monitor multiple Claude Code sessions in real-time from your termi
 ---
 
 ## 📋 Requirements
+
+> **Note**: This tool is **macOS only** due to its use of AppleScript for terminal focus features.
 
 - **macOS** (focus feature is macOS only)
 - **Node.js** >= 18.0.0
