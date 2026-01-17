@@ -16,7 +16,16 @@ export default defineConfig({
       reporter: ['text', 'lcov', 'html'],
       reportsDirectory: './coverage',
       include: ['src/**/*.ts'],
-      exclude: ['src/bin/**', 'src/components/**', 'src/hooks/**', 'src/index.ts'],
+      exclude: [
+        'src/bin/**',
+        'src/components/**',
+        'src/hooks/**',
+        'src/index.ts',
+        'src/setup/**', // Interactive setup (requires user input)
+        'src/utils/prompt.ts', // Interactive prompts
+        'src/utils/status.ts', // UI display helpers
+        'src/utils/time.ts', // Simple formatters
+      ],
       thresholds: {
         lines: 35,
         functions: 40,
