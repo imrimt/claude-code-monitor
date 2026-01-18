@@ -12,7 +12,9 @@ import { getStatusDisplay } from '../utils/status.js';
 const require = createRequire(import.meta.url);
 const pkg = require('../../package.json') as { version: string };
 
-const CLEAR_SCREEN = '\x1B[2J\x1B[0f';
+// Alternate screen buffer escape sequences
+const ENTER_ALT_SCREEN = '\x1b[?1049h\x1b[H';
+const EXIT_ALT_SCREEN = '\x1b[?1049l';
 
 /**
  * Get TTY from ancestor processes
@@ -44,6 +46,19 @@ function getTtyFromAncestors(): string | undefined {
   return undefined;
 }
 
+/**
+ * Run TUI with alternate screen buffer
+ */
+async function runWithAltScreen(renderFn: () => ReturnType<typeof render>) {
+  process.stdout.write(ENTER_ALT_SCREEN);
+  const { waitUntilExit } = renderFn();
+  try {
+    await waitUntilExit();
+  } finally {
+    process.stdout.write(EXIT_ALT_SCREEN);
+  }
+}
+
 const program = new Command();
 
 program
@@ -55,10 +70,8 @@ program
   .command('watch')
   .alias('w')
   .description('Start the monitoring TUI')
-  .action(() => {
-    process.stdout.write(CLEAR_SCREEN);
-    const { waitUntilExit } = render(<Dashboard />);
-    waitUntilExit().catch(console.error);
+  .action(async () => {
+    await runWithAltScreen(() => render(<Dashboard />));
   });
 
 program
@@ -125,9 +138,7 @@ async function defaultAction() {
   }
 
   // Launch monitor
-  process.stdout.write(CLEAR_SCREEN);
-  const { waitUntilExit } = render(<Dashboard />);
-  await waitUntilExit();
+  await runWithAltScreen(() => render(<Dashboard />));
 }
 
 // Default action when executed without commands
