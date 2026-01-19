@@ -114,17 +114,19 @@ end tell
  */
 function buildGhosttySendTextScript(text: string): string {
   const safeText = sanitizeForAppleScript(text);
+  // Use key code 36 (Return/Enter key) instead of keystroke return
+  // as Ghostty may handle keyboard events differently
   return `
 set the clipboard to "${safeText}"
 tell application "Ghostty"
   activate
 end tell
-delay 0.2
+delay 0.3
 tell application "System Events"
   tell process "Ghostty"
     keystroke "v" using command down
-    delay 0.05
-    keystroke return
+    delay 0.1
+    key code 36
   end tell
 end tell
 return true

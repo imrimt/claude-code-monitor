@@ -1,5 +1,6 @@
 import { flushPendingWrites, updateSession } from '../store/file-store.js';
 import type { HookEvent, HookEventName } from '../types/index.js';
+import { buildTranscriptPath } from '../utils/transcript.js';
 
 // Allowed hook event names (whitelist)
 /** @internal */
@@ -63,12 +64,20 @@ export async function handleHookEvent(eventName: string, tty?: string): Promise<
     process.exit(1);
   }
 
+  // Get transcript_path: use provided path or build from cwd and session_id
+  const cwd = (hookPayload.cwd as string) || process.cwd();
+  const transcriptPath =
+    typeof hookPayload.transcript_path === 'string'
+      ? hookPayload.transcript_path
+      : buildTranscriptPath(cwd, hookPayload.session_id);
+
   const event: HookEvent = {
     session_id: hookPayload.session_id,
-    cwd: (hookPayload.cwd as string) || process.cwd(),
+    cwd,
     tty,
     hook_event_name: eventName,
     notification_type: hookPayload.notification_type as string | undefined,
+    transcript_path: transcriptPath,
   };
 
   updateSession(event);

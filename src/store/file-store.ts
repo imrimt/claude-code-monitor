@@ -3,6 +3,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { SESSION_TIMEOUT_MS, WRITE_DEBOUNCE_MS } from '../constants.js';
 import type { HookEvent, Session, SessionStatus, StoreData } from '../types/index.js';
+import { getLastAssistantMessage } from '../utils/transcript.js';
 import { isTtyAlive } from '../utils/tty-cache.js';
 
 // Re-export for backward compatibility
@@ -154,6 +155,16 @@ export function updateSession(event: HookEvent): Session {
   }
 
   const existing = store.sessions[key];
+
+  // Get latest assistant message from transcript
+  let lastMessage = existing?.lastMessage;
+  if (event.transcript_path) {
+    const assistantMessage = getLastAssistantMessage(event.transcript_path);
+    if (assistantMessage) {
+      lastMessage = assistantMessage;
+    }
+  }
+
   const session: Session = {
     session_id: event.session_id,
     cwd: event.cwd,
@@ -161,6 +172,7 @@ export function updateSession(event: HookEvent): Session {
     status: determineStatus(event, existing?.status),
     created_at: existing?.created_at ?? now,
     updated_at: now,
+    lastMessage,
   };
 
   store.sessions[key] = session;
