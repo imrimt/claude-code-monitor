@@ -173,6 +173,172 @@
       background: #f85149;
     }
 
+    /* Modal styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+    }
+
+    .modal-overlay.show {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 400px;
+      max-height: 80vh;
+      overflow: hidden;
+      transform: scale(0.95);
+      transition: transform 0.2s ease;
+    }
+
+    .modal-overlay.show .modal {
+      transform: scale(1);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      border-bottom: 1px solid #30363d;
+    }
+
+    .modal-header h2 {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: #8b949e;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 4px;
+      line-height: 1;
+    }
+
+    .modal-body {
+      padding: 16px;
+    }
+
+    .modal-body textarea {
+      width: 100%;
+      height: 120px;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      color: #e6edf3;
+      font-family: inherit;
+      font-size: 14px;
+      padding: 12px;
+      resize: none;
+    }
+
+    .modal-body textarea:focus {
+      outline: none;
+      border-color: #58a6ff;
+    }
+
+    .modal-warning {
+      margin-top: 12px;
+      padding: 10px 12px;
+      background: rgba(210, 153, 34, 0.15);
+      border: 1px solid #d29922;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #d29922;
+      display: none;
+    }
+
+    .modal-warning.show {
+      display: block;
+    }
+
+    .modal-footer {
+      display: flex;
+      gap: 12px;
+      padding: 16px;
+      border-top: 1px solid #30363d;
+    }
+
+    .modal-btn {
+      flex: 1;
+      padding: 12px 16px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .modal-btn.cancel {
+      background: #21262d;
+      color: #e6edf3;
+    }
+
+    .modal-btn.cancel:active {
+      background: #30363d;
+    }
+
+    .modal-btn.send {
+      background: #238636;
+      color: white;
+    }
+
+    .modal-btn.send:active {
+      background: #2ea043;
+    }
+
+    .modal-btn.send:disabled {
+      background: #21262d;
+      color: #484f58;
+      cursor: not-allowed;
+    }
+
+    /* Session card action buttons */
+    .session-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .session-btn {
+      flex: 1;
+      padding: 10px 12px;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      background: #21262d;
+      color: #e6edf3;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .session-btn:active {
+      background: #30363d;
+    }
+
     @media (prefers-color-scheme: light) {
       body {
         background: #ffffff;
@@ -207,6 +373,44 @@
       .empty-state {
         color: #57606a;
       }
+
+      .modal {
+        background: #ffffff;
+        border-color: #d0d7de;
+      }
+
+      .modal-header {
+        border-bottom-color: #d0d7de;
+      }
+
+      .modal-header h2 {
+        color: #24292f;
+      }
+
+      .modal-body textarea {
+        background: #f6f8fa;
+        border-color: #d0d7de;
+        color: #24292f;
+      }
+
+      .modal-footer {
+        border-top-color: #d0d7de;
+      }
+
+      .modal-btn.cancel {
+        background: #f6f8fa;
+        color: #24292f;
+      }
+
+      .session-btn {
+        background: #f6f8fa;
+        border-color: #d0d7de;
+        color: #24292f;
+      }
+
+      .session-btn:active {
+        background: #eaeef2;
+      }
     }
   </style>
 </head>
@@ -228,11 +432,37 @@
 
   <div class="toast" id="toast"></div>
 
+  <!-- Send Text Modal -->
+  <div class="modal-overlay" id="sendTextModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Send Text to Terminal</h2>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <textarea id="sendTextInput" placeholder="Enter text to send to terminal..."></textarea>
+        <div class="modal-warning" id="modalWarning">
+          Warning: This text contains potentially dangerous commands. Please review carefully before sending.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn cancel" onclick="closeModal()">Cancel</button>
+        <button class="modal-btn send" id="sendTextBtn" onclick="sendText()">Send</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const sessionsContainer = document.getElementById('sessions');
     const connectionDot = document.getElementById('connectionDot');
     const connectionStatus = document.getElementById('connectionStatus');
     const toast = document.getElementById('toast');
+    const sendTextModal = document.getElementById('sendTextModal');
+    const sendTextInput = document.getElementById('sendTextInput');
+    const sendTextBtn = document.getElementById('sendTextBtn');
+    const modalWarning = document.getElementById('modalWarning');
+
+    let currentSendSessionId = null;
 
     let ws = null;
     let reconnectTimer = null;
@@ -248,6 +478,23 @@
       waiting_input: '??',
       stopped: '--'
     };
+
+    // Dangerous command patterns to warn users about
+    const DANGEROUS_PATTERNS = [
+      /rm\s+(-rf?|--recursive)/i,
+      /rm\s+-[a-z]*f/i,
+      /sudo\s+rm/i,
+      /mkfs/i,
+      /dd\s+if=/i,
+      />\s*\/dev\//i,
+      /chmod\s+777/i,
+      /curl.*\|\s*(ba)?sh/i,
+      /wget.*\|\s*(ba)?sh/i,
+    ];
+
+    function checkDangerousCommand(text) {
+      return DANGEROUS_PATTERNS.some(pattern => pattern.test(text));
+    }
 
     function showToast(message, isError = false) {
       toast.textContent = message;
@@ -282,6 +529,66 @@
       return date.toLocaleDateString();
     }
 
+    function openSendTextModal(sessionId, event) {
+      event.stopPropagation();
+      currentSendSessionId = sessionId;
+      sendTextInput.value = '';
+      modalWarning.classList.remove('show');
+      sendTextBtn.disabled = true;
+      sendTextModal.classList.add('show');
+      setTimeout(() => sendTextInput.focus(), 100);
+    }
+
+    function closeModal() {
+      sendTextModal.classList.remove('show');
+      currentSendSessionId = null;
+      sendTextInput.value = '';
+    }
+
+    function sendText() {
+      const text = sendTextInput.value.trim();
+      if (!text || !currentSendSessionId) return;
+
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'sendText', sessionId: currentSendSessionId, text }));
+        showToast('Sending text...');
+        closeModal();
+      } else {
+        showToast('Not connected', true);
+      }
+    }
+
+    // Handle input changes for warning and button state
+    sendTextInput.addEventListener('input', () => {
+      const text = sendTextInput.value.trim();
+      sendTextBtn.disabled = text.length === 0;
+
+      if (checkDangerousCommand(text)) {
+        modalWarning.classList.add('show');
+      } else {
+        modalWarning.classList.remove('show');
+      }
+    });
+
+    // Handle Enter key in modal (Cmd/Ctrl + Enter to send)
+    sendTextInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        if (!sendTextBtn.disabled) {
+          sendText();
+        }
+      } else if (e.key === 'Escape') {
+        closeModal();
+      }
+    });
+
+    // Close modal when clicking overlay
+    sendTextModal.addEventListener('click', (e) => {
+      if (e.target === sendTextModal) {
+        closeModal();
+      }
+    });
+
     function renderSessions(sessions) {
       if (!sessions || sessions.length === 0) {
         sessionsContainer.innerHTML = `
@@ -294,7 +601,7 @@
       }
 
       sessionsContainer.innerHTML = sessions.map(session => `
-        <div class="session-card ${session.status}" onclick="focusSession('${session.session_id}')">
+        <div class="session-card ${session.status}">
           <div class="session-header">
             <span class="session-status">${STATUS_ICONS[session.status]}</span>
             <span class="session-cwd">${formatPath(session.cwd)}</span>
@@ -302,6 +609,10 @@
           <div class="session-meta">
             <span class="session-status-text ${session.status}">${STATUS_LABELS[session.status]}</span>
             <span>${formatTime(session.updated_at)}</span>
+          </div>
+          <div class="session-actions">
+            <button class="session-btn" onclick="focusSession('${session.session_id}')">Focus</button>
+            <button class="session-btn" onclick="openSendTextModal('${session.session_id}', event)">Send Text</button>
           </div>
         </div>
       `).join('');
@@ -348,6 +659,12 @@
               showToast('Terminal focused!');
             } else {
               showToast('Could not focus terminal', true);
+            }
+          } else if (message.type === 'sendTextResult') {
+            if (message.success) {
+              showToast('Text sent!');
+            } else {
+              showToast(message.error || 'Could not send text', true);
             }
           }
         } catch (e) {

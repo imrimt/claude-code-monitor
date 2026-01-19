@@ -10,12 +10,14 @@ import { type WebSocket, WebSocketServer } from 'ws';
 import { getSessions, getStorePath } from '../store/file-store.js';
 import type { Session } from '../types/index.js';
 import { focusSession } from '../utils/focus.js';
+import { sendTextToTerminal } from '../utils/send-text.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 interface WebSocketMessage {
-  type: 'sessions' | 'focus';
+  type: 'sessions' | 'focus' | 'sendText';
   sessionId?: string;
+  text?: string;
 }
 
 interface BroadcastMessage {
@@ -121,6 +123,18 @@ export async function createMobileServer(port = 3456): Promise<ServerInfo> {
             const success = focusSession(session.tty);
             ws.send(JSON.stringify({ type: 'focusResult', success }));
           }
+        } else if (message.type === 'sendText' && message.sessionId && message.text) {
+          // Find session by ID and send text
+          const sessions = getSessions();
+          const session = sessions.find((s) => s.session_id === message.sessionId);
+          if (session?.tty) {
+            const result = sendTextToTerminal(session.tty, message.text);
+            ws.send(JSON.stringify({ type: 'sendTextResult', ...result }));
+          } else {
+            ws.send(
+              JSON.stringify({ type: 'sendTextResult', success: false, error: 'Session not found' })
+            );
+          }
         }
       } catch {
         // Ignore invalid messages
@@ -198,6 +212,17 @@ export function startServer(port = 3456): void {
           if (session?.tty) {
             const success = focusSession(session.tty);
             ws.send(JSON.stringify({ type: 'focusResult', success }));
+          }
+        } else if (message.type === 'sendText' && message.sessionId && message.text) {
+          const sessions = getSessions();
+          const session = sessions.find((s) => s.session_id === message.sessionId);
+          if (session?.tty) {
+            const result = sendTextToTerminal(session.tty, message.text);
+            ws.send(JSON.stringify({ type: 'sendTextResult', ...result }));
+          } else {
+            ws.send(
+              JSON.stringify({ type: 'sendTextResult', success: false, error: 'Session not found' })
+            );
           }
         }
       } catch {
