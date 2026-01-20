@@ -18,7 +18,7 @@ export interface Settings {
 }
 
 const DEFAULT_SETTINGS: Settings = {
-  qrCodeVisible: true,
+  qrCodeVisible: false,
 };
 
 // In-memory cache for batched writes

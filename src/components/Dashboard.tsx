@@ -10,15 +10,22 @@ import { SessionCard } from './SessionCard.js';
 
 const QUICK_SELECT_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
-export function Dashboard(): React.ReactElement {
+interface DashboardProps {
+  /** Override default QR code visibility (e.g., from --qr CLI flag) */
+  initialShowQr?: boolean;
+}
+
+export function Dashboard({ initialShowQr }: DashboardProps): React.ReactElement {
   const { sessions, loading, error } = useSessions();
   const { url, qrCode, loading: serverLoading } = useServer();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const { exit } = useApp();
   const { stdout } = useStdout();
 
-  // ユーザー設定からQRコード表示状態を読み込む（初回は表示）
-  const [qrCodeUserPref, setQrCodeUserPref] = useState(() => readSettings().qrCodeVisible);
+  // QRコード表示状態: --qrフラグが指定された場合はそれを優先、なければ設定を読み込む
+  const [qrCodeUserPref, setQrCodeUserPref] = useState(
+    () => initialShowQr ?? readSettings().qrCodeVisible
+  );
   const [terminalHeight, setTerminalHeight] = useState(stdout?.rows ?? 40);
 
   // Monitor terminal size changes
@@ -159,11 +166,22 @@ export function Dashboard(): React.ReactElement {
         <Text dimColor>[Enter]Focus</Text>
         <Text dimColor>[1-9]Quick</Text>
         <Text dimColor>[c]Clear</Text>
+        <Text dimColor>[h]{qrCodeUserPref ? 'Hide' : 'Show'}URL</Text>
         <Text dimColor>[q]Quit</Text>
       </Box>
 
-      {/* Web UI */}
-      {!serverLoading && url && (
+      {/* Web UI hint - shown when URL is hidden */}
+      {!serverLoading && url && !qrCodeUserPref && (
+        <Box marginTop={1} borderStyle="round" borderColor="gray" paddingX={1}>
+          <Text dimColor>
+            📱 Web UI available. Press [h] to show QR code for mobile access. (URL hidden for
+            security)
+          </Text>
+        </Box>
+      )}
+
+      {/* Web UI - only shown when qrCodeUserPref is true (security: URL contains token) */}
+      {!serverLoading && url && qrCodeUserPref && (
         <Box marginTop={1} paddingX={1}>
           {qrCodeVisible && qrCode && (
             <Box flexShrink={0}>
@@ -181,10 +199,7 @@ export function Dashboard(): React.ReactElement {
             <Text dimColor>{url}</Text>
             <Text dimColor>Scan QR code to monitor sessions from your phone.</Text>
             <Text dimColor>Tap a session to focus its terminal on this Mac.</Text>
-            <Text dimColor>[h] {qrCodeUserPref ? 'Hide' : 'Show'} QR code</Text>
-            {qrCodeUserPref && !canShowQr && (
-              <Text color="yellow">⚠ Resize window to show QR code</Text>
-            )}
+            {!canShowQr && <Text color="yellow">⚠ Resize window to show QR code</Text>}
           </Box>
         </Box>
       )}

@@ -7,6 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Claude Code Monitor</title>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -1015,7 +1016,12 @@
     function renderMarkdown(markdownText) {
       if (typeof marked !== 'undefined') {
         marked.setOptions({ breaks: true, gfm: true });
-        return marked.parse(markdownText);
+        const html = marked.parse(markdownText);
+        // Sanitize HTML to prevent XSS attacks
+        if (typeof DOMPurify !== 'undefined') {
+          return DOMPurify.sanitize(html);
+        }
+        return html;
       }
       const container = document.createElement('div');
       container.textContent = markdownText;

@@ -47,20 +47,24 @@ function getTtyFromAncestors(): string | undefined {
   return undefined;
 }
 
+interface DashboardOptions {
+  qr?: boolean;
+}
+
 /**
  * Run TUI with alternate screen buffer
  */
-async function runWithAltScreen(renderFn: () => ReturnType<typeof render>) {
+async function runWithAltScreen(options: DashboardOptions = {}) {
   process.stdout.write(ENTER_ALT_SCREEN);
   // カーソルを非表示にして、より安定したレンダリングを行う
   process.stdout.write('\x1b[?25l');
 
-  const instance = renderFn();
+  const instance = render(<Dashboard initialShowQr={options.qr} />, { patchConsole: false });
 
   // リサイズ時にInkの描画をクリアして再描画
   const handleResize = () => {
     instance.clear();
-    instance.rerender(<Dashboard />);
+    instance.rerender(<Dashboard initialShowQr={options.qr} />);
   };
   process.stdout.on('resize', handleResize);
 
@@ -79,14 +83,16 @@ const program = new Command();
 program
   .name('ccm')
   .description('Claude Code Monitor - CLI-based session monitoring')
-  .version(pkg.version);
+  .version(pkg.version)
+  .option('--qr', 'Show QR code for mobile access');
 
 program
   .command('watch')
   .alias('w')
   .description('Start the monitoring TUI')
-  .action(async () => {
-    await runWithAltScreen(() => render(<Dashboard />, { patchConsole: false }));
+  .option('--qr', 'Show QR code for mobile access')
+  .action(async (options: { qr?: boolean }) => {
+    await runWithAltScreen({ qr: options.qr });
   });
 
 program
@@ -145,11 +151,11 @@ program
   });
 
 /**
- * Default action (when launched without arguments)
+ * Default action (when launched without arguments or with --qr only)
  * - Run setup if not configured
  * - Launch monitor if already configured
  */
-async function defaultAction() {
+async function defaultAction(options: DashboardOptions = {}) {
   if (!isHooksConfigured()) {
     console.log('Initial setup required.\n');
     await setupHooks();
@@ -163,12 +169,13 @@ async function defaultAction() {
   }
 
   // Launch monitor
-  await runWithAltScreen(() => render(<Dashboard />, { patchConsole: false }));
+  await runWithAltScreen(options);
 }
 
-// Default action when executed without commands
-if (process.argv.length === 2) {
-  defaultAction().catch(console.error);
-} else {
-  program.parse();
-}
+// Handle default action (no subcommand)
+program.action(async () => {
+  const options = program.opts<{ qr?: boolean }>();
+  await defaultAction({ qr: options.qr });
+});
+
+program.parse();

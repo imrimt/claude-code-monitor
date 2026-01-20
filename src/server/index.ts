@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { networkInterfaces } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import chokidar from 'chokidar';
 import qrcode from 'qrcode-terminal';
@@ -199,13 +199,22 @@ function serveStatic(req: IncomingMessage, res: ServerResponse, validToken: stri
     return;
   }
 
-  const publicDir = join(__dirname, '../../public');
-  let filePath = url.pathname === '/' ? '/index.html' : url.pathname;
+  const publicDir = resolve(__dirname, '../../public');
+  const filePath = url.pathname === '/' ? '/index.html' : url.pathname;
 
   // Prevent directory traversal
-  filePath = filePath.replace(/\.\./g, '');
+  // Remove leading slashes and normalize to prevent absolute path injection
+  const safePath = normalize(filePath)
+    .replace(/^(\.\.(\/|\\|$))+/, '')
+    .replace(/^\/+/, '');
+  const fullPath = resolve(publicDir, safePath);
 
-  const fullPath = join(publicDir, filePath);
+  // Verify the resolved path is within publicDir
+  if (!fullPath.startsWith(publicDir)) {
+    res.writeHead(403, { 'Content-Type': 'text/plain' });
+    res.end('Forbidden');
+    return;
+  }
 
   try {
     const content = readFileSync(fullPath, 'utf-8');
