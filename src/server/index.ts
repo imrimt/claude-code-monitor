@@ -58,12 +58,15 @@ function handleFocusCommand(ws: WebSocket, sessionId: string): void {
  * Handle sendText command from WebSocket client.
  */
 function handleSendTextCommand(ws: WebSocket, sessionId: string, text: string): void {
+  console.log('[DEBUG] sendText received:', { sessionId, text: text.substring(0, 50) });
   const session = findSessionById(sessionId);
+  console.log('[DEBUG] session found:', session ? { tty: session.tty, cwd: session.cwd } : null);
   if (!session?.tty) {
     ws.send(JSON.stringify({ type: 'sendTextResult', success: false, error: 'Session not found' }));
     return;
   }
   const result = sendTextToTerminal(session.tty, text);
+  console.log('[DEBUG] sendTextToTerminal result:', result);
   ws.send(JSON.stringify({ type: 'sendTextResult', ...result }));
 }
 

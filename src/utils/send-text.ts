@@ -54,8 +54,10 @@ tell application "iTerm2"
           select aTab
           tell aWindow to select
           activate
-          delay 0.2
+          delay 0.3
           tell application "System Events"
+            set frontmost of process "iTerm2" to true
+            delay 0.1
             tell process "iTerm2"
               keystroke "v" using command down
               delay 0.1
@@ -114,19 +116,19 @@ end tell
  */
 function buildGhosttySendTextScript(text: string): string {
   const safeText = sanitizeForAppleScript(text);
-  // Use key code 36 (Return/Enter key) instead of keystroke return
-  // as Ghostty may handle keyboard events differently
   return `
 set the clipboard to "${safeText}"
 tell application "Ghostty"
   activate
 end tell
-delay 0.3
+delay 0.6
 tell application "System Events"
+  set frontmost of process "Ghostty" to true
+  delay 0.2
   tell process "Ghostty"
     keystroke "v" using command down
-    delay 0.1
-    key code 36
+    delay 0.2
+    keystroke return
   end tell
 end tell
 return true
@@ -134,15 +136,24 @@ return true
 }
 
 function sendTextToITerm2(tty: string, text: string): boolean {
-  return executeAppleScript(buildITerm2SendTextScript(tty, text));
+  console.log('[DEBUG] Trying iTerm2 for TTY:', tty);
+  const result = executeAppleScript(buildITerm2SendTextScript(tty, text));
+  console.log('[DEBUG] iTerm2 result:', result);
+  return result;
 }
 
 function sendTextToTerminalApp(tty: string, text: string): boolean {
-  return executeAppleScript(buildTerminalAppSendTextScript(tty, text));
+  console.log('[DEBUG] Trying Terminal.app for TTY:', tty);
+  const result = executeAppleScript(buildTerminalAppSendTextScript(tty, text));
+  console.log('[DEBUG] Terminal.app result:', result);
+  return result;
 }
 
 function sendTextToGhostty(text: string): boolean {
-  return executeAppleScript(buildGhosttySendTextScript(text));
+  console.log('[DEBUG] Trying Ghostty');
+  const result = executeAppleScript(buildGhosttySendTextScript(text));
+  console.log('[DEBUG] Ghostty result:', result);
+  return result;
 }
 
 /**
