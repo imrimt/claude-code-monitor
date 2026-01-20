@@ -150,7 +150,21 @@
 
     .card-content {
       padding: 14px 16px;
+      position: relative;
     }
+
+    .card-status-label {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .card.running .card-status-label { color: var(--status-running); }
+    .card.waiting_input .card-status-label { color: var(--status-waiting); }
+    .card.stopped .card-status-label { color: var(--status-stopped); }
 
     /* Card Header: Status + Directory */
     .card-header {
@@ -212,32 +226,6 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-    }
-
-    .card-status-label {
-      display: inline-block;
-      margin-top: 6px;
-      padding: 3px 8px;
-      border-radius: 4px;
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .card.running .card-status-label {
-      background: var(--status-running-bg);
-      color: var(--status-running);
-    }
-
-    .card.waiting_input .card-status-label {
-      background: var(--status-waiting-bg);
-      color: var(--status-waiting);
-    }
-
-    .card.stopped .card-status-label {
-      background: var(--status-stopped-bg);
-      color: var(--status-stopped);
     }
 
     /* Message Preview */
@@ -558,20 +546,6 @@
       border-color: var(--accent);
     }
 
-    .modal-hint {
-      margin-top: 8px;
-      font-size: 12px;
-      color: var(--text-muted);
-    }
-
-    .modal-hint kbd {
-      background: var(--bg-primary);
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 11px;
-      font-family: inherit;
-    }
-
     .modal-warn {
       margin-top: 12px;
       padding: 10px 12px;
@@ -653,9 +627,6 @@
       </div>
       <div class="modal-body">
         <textarea id="msgInput" placeholder="Type your message..."></textarea>
-        <div class="modal-hint">
-          <kbd>Cmd</kbd> + <kbd>Enter</kbd> to send
-        </div>
         <div class="modal-warn" id="warn">
           <span>⚠️</span>
           <span>This looks like a dangerous command</span>
@@ -683,7 +654,7 @@
     let openMsgs = new Set();
 
     const STATUS = {
-      running: { label: 'Running', icon: '⚡' },
+      running: { label: 'Running', icon: '🏃' },
       waiting_input: { label: 'Waiting', icon: '⏸' },
       stopped: { label: 'Done', icon: '✓' }
     };
@@ -844,12 +815,12 @@
           <div class="card ${s.status}">
             <div class="card-accent"></div>
             <div class="card-content">
+              <span class="card-status-label">${status.label}</span>
               <div class="card-header">
                 <div class="status-icon">${status.icon}</div>
                 <div class="card-info">
                   <div class="card-dir">${dirName}</div>
                   <div class="card-path">${fullPath}</div>
-                  <span class="card-status-label">${status.label}</span>
                 </div>
               </div>
               ${s.lastMessage ? `
