@@ -9,19 +9,11 @@ import { SessionCard } from './SessionCard.js';
 
 const QUICK_SELECT_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
-// 起動時のターミナルサイズを一度だけ取得（リサイズ監視しない = チラつき防止）
-const INITIAL_ROWS = process.stdout.rows || 40;
-// QRコード表示に必要な最小行数
-const MIN_ROWS_FOR_QR = 25;
-
 export function Dashboard(): React.ReactElement {
   const { sessions, loading, error } = useSessions();
   const { url, qrCode, loading: serverLoading } = useServer();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const { exit } = useApp();
-
-  // 起動時のターミナルサイズに基づいてQRコード表示を決定（リサイズで変わらない）
-  const hasEnoughRows = INITIAL_ROWS >= MIN_ROWS_FOR_QR;
 
   // ユーザー設定からQRコード表示状態を読み込む（初回は表示）
   const [qrCodeVisible, setQrCodeVisible] = useState(() => readSettings().qrCodeVisible);
@@ -85,7 +77,7 @@ export function Dashboard(): React.ReactElement {
       setSelectedIndex(0);
       return;
     }
-    if (input === 'h' && hasEnoughRows) {
+    if (input === 'h') {
       toggleQrCode();
     }
   });
@@ -146,7 +138,7 @@ export function Dashboard(): React.ReactElement {
       </Box>
 
       {/* Web UI */}
-      {!serverLoading && url && hasEnoughRows && (
+      {!serverLoading && url && (
         <Box marginTop={1} paddingX={1}>
           {qrCodeVisible && qrCode && (
             <Box flexShrink={0}>
@@ -166,15 +158,6 @@ export function Dashboard(): React.ReactElement {
             <Text dimColor>Tap a session to focus its terminal on this Mac.</Text>
             <Text dimColor>[h] {qrCodeVisible ? 'Hide' : 'Show'} QR code</Text>
           </Box>
-        </Box>
-      )}
-      {/* URLのみ表示（高さが足りない場合） */}
-      {!serverLoading && url && !hasEnoughRows && (
-        <Box marginTop={1} paddingX={1}>
-          <Text bold color="magenta">
-            Web UI:{' '}
-          </Text>
-          <Text dimColor>{url}</Text>
         </Box>
       )}
     </Box>
