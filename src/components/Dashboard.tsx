@@ -174,8 +174,7 @@ export function Dashboard({ initialShowQr }: DashboardProps): React.ReactElement
       {!serverLoading && url && !qrCodeUserPref && (
         <Box marginTop={1} borderStyle="round" borderColor="gray" paddingX={1}>
           <Text color="white">
-            📱 Web UI available. Press [h] to show QR code for mobile access. (URL hidden for
-            security)
+            📱 Web UI available. Press [h] to show QR code for mobile access. (Same Wi-Fi required)
           </Text>
         </Box>
       )}
