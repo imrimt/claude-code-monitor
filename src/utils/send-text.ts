@@ -1,4 +1,4 @@
-import { execFileSync } from 'node:child_process';
+import { executeAppleScript } from './applescript.js';
 import { isMacOS, isValidTtyPath, sanitizeForAppleScript } from './focus.js';
 
 /**
@@ -21,18 +21,6 @@ export function validateTextInput(text: string): { valid: boolean; error?: strin
   }
 
   return { valid: true };
-}
-
-function executeAppleScript(script: string): boolean {
-  try {
-    const result = execFileSync('osascript', ['-e', script], {
-      encoding: 'utf-8',
-      stdio: ['pipe', 'pipe', 'pipe'],
-    }).trim();
-    return result === 'true';
-  } catch {
-    return false;
-  }
 }
 
 /**

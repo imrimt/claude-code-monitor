@@ -30,47 +30,44 @@ export async function handleHookEvent(eventName: string, tty?: string): Promise<
     process.exit(1);
   }
 
-  let hookPayload: Record<string, unknown>;
+  let rawInput: Record<string, unknown>;
   try {
-    hookPayload = await readJsonFromStdin<Record<string, unknown>>();
+    rawInput = await readJsonFromStdin<Record<string, unknown>>();
   } catch {
     console.error('Invalid JSON input');
     process.exit(1);
   }
 
   // Validate required fields
-  if (!isNonEmptyString(hookPayload.session_id)) {
+  if (!isNonEmptyString(rawInput.session_id)) {
     console.error('Invalid or missing session_id');
     process.exit(1);
   }
 
   // Validate optional fields if present
-  if (hookPayload.cwd !== undefined && typeof hookPayload.cwd !== 'string') {
+  if (rawInput.cwd !== undefined && typeof rawInput.cwd !== 'string') {
     console.error('Invalid cwd: must be a string');
     process.exit(1);
   }
 
-  if (
-    hookPayload.notification_type !== undefined &&
-    typeof hookPayload.notification_type !== 'string'
-  ) {
+  if (rawInput.notification_type !== undefined && typeof rawInput.notification_type !== 'string') {
     console.error('Invalid notification_type: must be a string');
     process.exit(1);
   }
 
   // Get transcript_path: use provided path or build from cwd and session_id
-  const cwd = (hookPayload.cwd as string) || process.cwd();
+  const cwd = (rawInput.cwd as string) || process.cwd();
   const transcriptPath =
-    typeof hookPayload.transcript_path === 'string'
-      ? hookPayload.transcript_path
-      : buildTranscriptPath(cwd, hookPayload.session_id);
+    typeof rawInput.transcript_path === 'string'
+      ? rawInput.transcript_path
+      : buildTranscriptPath(cwd, rawInput.session_id);
 
   const event: HookEvent = {
-    session_id: hookPayload.session_id,
+    session_id: rawInput.session_id,
     cwd,
     tty,
     hook_event_name: eventName,
-    notification_type: hookPayload.notification_type as string | undefined,
+    notification_type: rawInput.notification_type as string | undefined,
     transcript_path: transcriptPath,
   };
 
