@@ -144,16 +144,11 @@ export interface ServerInfo {
 
 export function getLocalIP(): string {
   const interfaces = networkInterfaces();
-  for (const name of Object.keys(interfaces)) {
-    const iface = interfaces[name];
-    if (!iface) continue;
-    for (const info of iface) {
-      if (info.family === 'IPv4' && !info.internal) {
-        return info.address;
-      }
-    }
-  }
-  return 'localhost';
+  const allAddresses = Object.values(interfaces)
+    .flat()
+    .filter((info): info is NonNullable<typeof info> => info != null);
+  const externalIPv4 = allAddresses.find((info) => info.family === 'IPv4' && !info.internal);
+  return externalIPv4?.address ?? 'localhost';
 }
 
 export function generateQRCode(text: string): Promise<string> {

@@ -1,6 +1,7 @@
 import { Box, Text, useApp, useInput, useStdout } from 'ink';
 import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
+import { MIN_TERMINAL_HEIGHT_FOR_QR } from '../constants.js';
 import { useServer } from '../hooks/useServer.js';
 import { useSessions } from '../hooks/useSessions.js';
 import { clearSessions, readSettings, writeSettings } from '../store/file-store.js';
@@ -8,10 +9,6 @@ import { focusSession } from '../utils/focus.js';
 import { SessionCard } from './SessionCard.js';
 
 const QUICK_SELECT_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
-
-// Minimum terminal height required to display QR code without overflow issues
-// Header(1) + Sessions(3) + Shortcuts(2) + WebUI(16 with QR) = ~22 rows minimum
-const MIN_HEIGHT_FOR_QR = 22;
 
 export function Dashboard(): React.ReactElement {
   const { sessions, loading, error } = useSessions();
@@ -42,7 +39,7 @@ export function Dashboard(): React.ReactElement {
   }, [stdout]);
 
   // QR code visibility: user preference AND terminal has enough space
-  const canShowQr = terminalHeight >= MIN_HEIGHT_FOR_QR;
+  const canShowQr = terminalHeight >= MIN_TERMINAL_HEIGHT_FOR_QR;
   const qrCodeVisible = qrCodeUserPref && canShowQr;
 
   const toggleQrCode = () => {

@@ -39,7 +39,6 @@ function getEmptyStoreData(): StoreData {
 }
 
 export function readStore(): StoreData {
-  // Return cached data if available (for batched writes consistency)
   if (cachedStore) {
     return cachedStore;
   }
@@ -166,13 +165,10 @@ export function updateSession(event: HookEvent): Session {
   const existing = store.sessions[key];
 
   // Get latest assistant message from transcript
-  let lastMessage = existing?.lastMessage;
-  if (event.transcript_path) {
-    const assistantMessage = getLastAssistantMessage(event.transcript_path);
-    if (assistantMessage) {
-      lastMessage = assistantMessage;
-    }
-  }
+  const assistantMessage = event.transcript_path
+    ? getLastAssistantMessage(event.transcript_path)
+    : undefined;
+  const lastMessage = assistantMessage ?? existing?.lastMessage;
 
   const session: Session = {
     session_id: event.session_id,

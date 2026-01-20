@@ -1,5 +1,6 @@
 import { flushPendingWrites, updateSession } from '../store/file-store.js';
 import type { HookEvent, HookEventName } from '../types/index.js';
+import { readJsonFromStdin } from '../utils/stdin.js';
 import { buildTranscriptPath } from '../utils/transcript.js';
 
 // Allowed hook event names (whitelist)
@@ -29,16 +30,9 @@ export async function handleHookEvent(eventName: string, tty?: string): Promise<
     process.exit(1);
   }
 
-  // Read JSON from stdin
-  const chunks: Buffer[] = [];
-  for await (const chunk of process.stdin) {
-    chunks.push(chunk as Buffer);
-  }
-  const inputJson = Buffer.concat(chunks).toString('utf-8');
-
   let hookPayload: Record<string, unknown>;
   try {
-    hookPayload = JSON.parse(inputJson);
+    hookPayload = await readJsonFromStdin<Record<string, unknown>>();
   } catch {
     console.error('Invalid JSON input');
     process.exit(1);

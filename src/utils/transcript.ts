@@ -29,11 +29,9 @@ export function getLastAssistantMessage(transcriptPath: string): string | undefi
       try {
         const entry = JSON.parse(lines[i]);
         if (entry.type === 'assistant' && entry.message?.content) {
-          // Extract text from content array
-          const textParts = entry.message.content
-            .filter((c: { type: string }) => c.type === 'text')
-            .map((c: { text: string }) => c.text)
-            .join('\n');
+          const contentBlocks = entry.message.content as Array<{ type: string; text?: string }>;
+          const textBlocks = contentBlocks.filter((block) => block.type === 'text');
+          const textParts = textBlocks.map((block) => block.text ?? '').join('\n');
           if (textParts) {
             return textParts;
           }
