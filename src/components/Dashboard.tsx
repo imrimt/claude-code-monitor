@@ -1,6 +1,6 @@
-import { Box, Text, useApp, useInput } from 'ink';
+import { Box, Text, useApp, useInput, useStdout } from 'ink';
 import type React from 'react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useServer } from '../hooks/useServer.js';
 import { useSessions } from '../hooks/useSessions.js';
 import { clearSessions, readSettings, writeSettings } from '../store/file-store.js';
@@ -9,18 +9,45 @@ import { SessionCard } from './SessionCard.js';
 
 const QUICK_SELECT_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
+// Minimum terminal height required to display QR code without overflow issues
+// Header(1) + Sessions(3) + Shortcuts(2) + WebUI(16 with QR) = ~22 rows minimum
+const MIN_HEIGHT_FOR_QR = 22;
+
 export function Dashboard(): React.ReactElement {
   const { sessions, loading, error } = useSessions();
   const { url, qrCode, loading: serverLoading } = useServer();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const { exit } = useApp();
+  const { stdout } = useStdout();
 
   // ユーザー設定からQRコード表示状態を読み込む（初回は表示）
-  const [qrCodeVisible, setQrCodeVisible] = useState(() => readSettings().qrCodeVisible);
+  const [qrCodeUserPref, setQrCodeUserPref] = useState(() => readSettings().qrCodeVisible);
+  const [terminalHeight, setTerminalHeight] = useState(stdout?.rows ?? 40);
+
+  // Monitor terminal size changes
+  useEffect(() => {
+    if (!stdout) return;
+
+    const handleResize = () => {
+      setTerminalHeight(stdout.rows ?? 40);
+    };
+
+    // Initial size
+    setTerminalHeight(stdout.rows ?? 40);
+
+    stdout.on('resize', handleResize);
+    return () => {
+      stdout.off('resize', handleResize);
+    };
+  }, [stdout]);
+
+  // QR code visibility: user preference AND terminal has enough space
+  const canShowQr = terminalHeight >= MIN_HEIGHT_FOR_QR;
+  const qrCodeVisible = qrCodeUserPref && canShowQr;
 
   const toggleQrCode = () => {
-    const newValue = !qrCodeVisible;
-    setQrCodeVisible(newValue);
+    const newValue = !qrCodeUserPref;
+    setQrCodeUserPref(newValue);
     writeSettings({ qrCodeVisible: newValue });
   };
 
@@ -157,7 +184,10 @@ export function Dashboard(): React.ReactElement {
             <Text dimColor>{url}</Text>
             <Text dimColor>Scan QR code to monitor sessions from your phone.</Text>
             <Text dimColor>Tap a session to focus its terminal on this Mac.</Text>
-            <Text dimColor>[h] {qrCodeVisible ? 'Hide' : 'Show'} QR code</Text>
+            <Text dimColor>[h] {qrCodeUserPref ? 'Hide' : 'Show'} QR code</Text>
+            {qrCodeUserPref && !canShowQr && (
+              <Text color="yellow">⚠ Resize window to show QR code</Text>
+            )}
           </Box>
         </Box>
       )}
