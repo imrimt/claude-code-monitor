@@ -262,45 +262,104 @@
 
     .card-msg-full {
       display: none;
-      margin-top: 10px;
-      padding-top: 10px;
+      margin-top: 12px;
+      padding-top: 12px;
       border-top: 1px solid var(--border-subtle);
       font-size: 14px;
       color: var(--text-primary);
-      line-height: 1.6;
+      line-height: 1.7;
     }
 
     .card-msg.open .card-msg-text { display: none; }
     .card-msg.open .card-msg-full { display: block; }
 
-    .card-msg-full p { margin: 0 0 10px 0; }
-    .card-msg-full p:last-child { margin: 0; }
+    .card-msg-full > *:first-child { margin-top: 0; }
+    .card-msg-full > *:last-child { margin-bottom: 0; }
+
+    .card-msg-full p {
+      margin: 0 0 14px 0;
+    }
+    .card-msg-full h1, .card-msg-full h2, .card-msg-full h3,
+    .card-msg-full h4, .card-msg-full h5, .card-msg-full h6 {
+      margin: 20px 0 12px 0;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+    .card-msg-full h1 { font-size: 18px; }
+    .card-msg-full h2 { font-size: 16px; }
+    .card-msg-full h3 { font-size: 15px; }
     .card-msg-full code {
       background: var(--bg-primary);
-      padding: 2px 6px;
+      padding: 3px 7px;
       border-radius: 4px;
-      font-size: 12px;
+      font-size: 13px;
       font-family: 'SF Mono', Menlo, monospace;
     }
     .card-msg-full pre {
       background: var(--bg-primary);
-      padding: 12px;
+      padding: 14px 16px;
       border-radius: var(--radius-sm);
       overflow-x: auto;
-      margin: 10px 0;
-      font-size: 12px;
+      margin: 16px 0;
+      font-size: 13px;
       font-family: 'SF Mono', Menlo, monospace;
+      line-height: 1.5;
     }
     .card-msg-full pre code {
       background: none;
       padding: 0;
     }
     .card-msg-full ul, .card-msg-full ol {
-      margin: 10px 0;
-      padding-left: 20px;
+      margin: 14px 0;
+      padding-left: 24px;
     }
     .card-msg-full li {
-      margin: 4px 0;
+      margin: 8px 0;
+    }
+    .card-msg-full li > ul, .card-msg-full li > ol {
+      margin: 6px 0;
+    }
+    .card-msg-full blockquote {
+      margin: 14px 0;
+      padding: 10px 16px;
+      border-left: 3px solid var(--accent);
+      background: var(--bg-primary);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      color: var(--text-secondary);
+    }
+    .card-msg-full blockquote p {
+      margin: 0;
+    }
+    .card-msg-full hr {
+      border: none;
+      border-top: 1px solid var(--border-default);
+      margin: 18px 0;
+    }
+    .card-msg-full hr + * {
+      margin-top: 18px !important;
+    }
+    .card-msg-full a {
+      color: var(--accent-hover);
+      text-decoration: none;
+    }
+    .card-msg-full strong {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .card-msg-full table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0;
+      font-size: 13px;
+    }
+    .card-msg-full th, .card-msg-full td {
+      padding: 8px 12px;
+      border: 1px solid var(--border-default);
+      text-align: left;
+    }
+    .card-msg-full th {
+      background: var(--bg-primary);
+      font-weight: 600;
     }
 
     /* Action Buttons */
@@ -414,7 +473,9 @@
       bottom: calc(env(safe-area-inset-bottom, 0) + 24px);
       left: 50%;
       transform: translateX(-50%) translateY(100px);
-      background: var(--bg-card);
+      background: rgba(26, 26, 26, 0.95);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       color: var(--text-primary);
       padding: 12px 20px;
       border-radius: var(--radius-lg);
@@ -432,13 +493,17 @@
     }
 
     .toast.ok {
-      background: var(--status-running-bg);
-      color: var(--status-running);
+      background: rgba(16, 185, 129, 0.9);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      color: white;
     }
 
     .toast.err {
-      background: rgba(239, 68, 68, 0.15);
-      color: var(--danger);
+      background: rgba(239, 68, 68, 0.9);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      color: white;
     }
 
     /* Modal / Bottom Sheet */
@@ -642,6 +707,7 @@
     let ws = null;
     let targetSession = null;
     let openMsgs = new Set();
+    let pendingSend = null;
 
     const STATUS = {
       running: { label: 'Running', icon: '🏃' },
@@ -728,10 +794,29 @@
 
     function sendMsg() {
       const t = $msgInput.value.trim();
-      if (!t || !targetSession || !ws) return;
+      if (!t || !targetSession) return;
+      if (!ws || ws.readyState !== 1) {
+        toast('Not connected', 'err');
+        return;
+      }
+      if (pendingSend) return;
+
+      pendingSend = targetSession;
+      $sendBtn.disabled = true;
+      $sendBtn.textContent = 'Sending...';
+
       ws.send(JSON.stringify({ type: 'sendText', sessionId: targetSession, text: t }));
-      toast('Sending...');
-      closeModal();
+
+      // Timeout after 5 seconds
+      setTimeout(() => {
+        if (pendingSend) {
+          pendingSend = null;
+          $sendBtn.disabled = false;
+          $sendBtn.textContent = 'Send';
+          toast('Send timeout', 'err');
+          closeModal();
+        }
+      }, 5000);
     }
 
     function focusTerminal(id, e) {
@@ -850,7 +935,13 @@
           const m = JSON.parse(e.data);
           if (m.type === 'sessions') render(m.data);
           else if (m.type === 'focusResult') toast(m.success ? 'Focused!' : 'Failed to focus', m.success ? 'ok' : 'err');
-          else if (m.type === 'sendTextResult') toast(m.success ? 'Sent!' : (m.error || 'Failed'), m.success ? 'ok' : 'err');
+          else if (m.type === 'sendTextResult') {
+            pendingSend = null;
+            $sendBtn.disabled = false;
+            $sendBtn.textContent = 'Send';
+            toast(m.success ? 'Sent!' : (m.error || 'Failed'), m.success ? 'ok' : 'err');
+            if (m.success) closeModal();
+          }
         } catch {}
       };
     }

@@ -13,6 +13,5 @@ export function formatRelativeTime(timestamp: string): string {
   // Check from largest to smallest unit (use the first matching unit)
   if (hours > 0) return `${hours}h ago`;
   if (minutes > 0) return `${minutes}m ago`;
-  if (seconds >= 0) return `${seconds}s ago`;
-  return 'now';
+  return `${seconds}s ago`;
 }

@@ -3,7 +3,6 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import { networkInterfaces } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { FSWatcher } from 'chokidar';
 import chokidar from 'chokidar';
 import qrcode from 'qrcode-terminal';
 import { type WebSocket, WebSocketServer } from 'ws';
@@ -23,6 +22,82 @@ interface WebSocketMessage {
 interface BroadcastMessage {
   type: 'sessions';
   data: Session[];
+}
+
+// WebSocket.OPEN constant (avoid magic number)
+const WEBSOCKET_OPEN = 1;
+
+/**
+ * Handle incoming WebSocket message from client.
+ * Processes focus and sendText commands.
+ */
+function handleWebSocketMessage(ws: WebSocket, data: Buffer): void {
+  try {
+    const message = JSON.parse(data.toString()) as WebSocketMessage;
+
+    if (message.type === 'focus' && message.sessionId) {
+      const sessions = getSessions();
+      const session = sessions.find((s) => s.session_id === message.sessionId);
+      if (session?.tty) {
+        const success = focusSession(session.tty);
+        ws.send(JSON.stringify({ type: 'focusResult', success }));
+      } else {
+        ws.send(
+          JSON.stringify({
+            type: 'focusResult',
+            success: false,
+            error: 'Session not found or no TTY',
+          })
+        );
+      }
+      return;
+    }
+
+    if (message.type === 'sendText' && message.sessionId && message.text) {
+      const sessions = getSessions();
+      const session = sessions.find((s) => s.session_id === message.sessionId);
+      if (session?.tty) {
+        const result = sendTextToTerminal(session.tty, message.text);
+        ws.send(JSON.stringify({ type: 'sendTextResult', ...result }));
+      } else {
+        ws.send(
+          JSON.stringify({ type: 'sendTextResult', success: false, error: 'Session not found' })
+        );
+      }
+    }
+  } catch {
+    // Ignore invalid messages
+  }
+}
+
+/**
+ * Broadcast message to all connected WebSocket clients.
+ */
+function broadcastToClients(wss: WebSocketServer, message: BroadcastMessage): void {
+  const data = JSON.stringify(message);
+  for (const client of wss.clients) {
+    if (client.readyState === WEBSOCKET_OPEN) {
+      client.send(data);
+    }
+  }
+}
+
+/**
+ * Send current sessions to a WebSocket client.
+ */
+function sendSessionsToClient(ws: WebSocket): void {
+  const sessions = getSessions();
+  ws.send(JSON.stringify({ type: 'sessions', data: sessions }));
+}
+
+/**
+ * Setup WebSocket connection handlers.
+ */
+function setupWebSocketHandlers(wss: WebSocketServer): void {
+  wss.on('connection', (ws: WebSocket) => {
+    sendSessionsToClient(ws);
+    ws.on('message', (data: Buffer) => handleWebSocketMessage(ws, data));
+  });
 }
 
 export interface ServerInfo {
@@ -94,64 +169,7 @@ export async function createMobileServer(port = 3456): Promise<ServerInfo> {
 
   // WebSocket server
   const wss = new WebSocketServer({ server });
-
-  function broadcast(message: BroadcastMessage): void {
-    const data = JSON.stringify(message);
-    for (const client of wss.clients) {
-      if (client.readyState === 1) {
-        // WebSocket.OPEN
-        client.send(data);
-      }
-    }
-  }
-
-  function sendSessions(ws: WebSocket): void {
-    const sessions = getSessions();
-    ws.send(JSON.stringify({ type: 'sessions', data: sessions }));
-  }
-
-  wss.on('connection', (ws: WebSocket) => {
-    // Send initial sessions
-    sendSessions(ws);
-
-    ws.on('message', (data: Buffer) => {
-      try {
-        const message = JSON.parse(data.toString()) as WebSocketMessage;
-
-        if (message.type === 'focus' && message.sessionId) {
-          // Find session by ID and focus
-          const sessions = getSessions();
-          const session = sessions.find((s) => s.session_id === message.sessionId);
-          if (session?.tty) {
-            const success = focusSession(session.tty);
-            ws.send(JSON.stringify({ type: 'focusResult', success }));
-          } else {
-            ws.send(
-              JSON.stringify({
-                type: 'focusResult',
-                success: false,
-                error: 'Session not found or no TTY',
-              })
-            );
-          }
-        } else if (message.type === 'sendText' && message.sessionId && message.text) {
-          // Find session by ID and send text
-          const sessions = getSessions();
-          const session = sessions.find((s) => s.session_id === message.sessionId);
-          if (session?.tty) {
-            const result = sendTextToTerminal(session.tty, message.text);
-            ws.send(JSON.stringify({ type: 'sendTextResult', ...result }));
-          } else {
-            ws.send(
-              JSON.stringify({ type: 'sendTextResult', success: false, error: 'Session not found' })
-            );
-          }
-        }
-      } catch {
-        // Ignore invalid messages
-      }
-    });
-  });
+  setupWebSocketHandlers(wss);
 
   // Watch sessions.json for changes
   const storePath = getStorePath();
@@ -165,7 +183,7 @@ export async function createMobileServer(port = 3456): Promise<ServerInfo> {
 
   watcher.on('change', () => {
     const sessions = getSessions();
-    broadcast({ type: 'sessions', data: sessions });
+    broadcastToClients(wss, { type: 'sessions', data: sessions });
   });
 
   // Start server
@@ -193,65 +211,10 @@ export function startServer(port = 3456): void {
 
   // WebSocket server
   const wss = new WebSocketServer({ server });
-
-  let watcher: FSWatcher;
-
-  function broadcast(message: BroadcastMessage): void {
-    const data = JSON.stringify(message);
-    for (const client of wss.clients) {
-      if (client.readyState === 1) {
-        client.send(data);
-      }
-    }
-  }
-
-  function sendSessions(ws: WebSocket): void {
-    const sessions = getSessions();
-    ws.send(JSON.stringify({ type: 'sessions', data: sessions }));
-  }
-
-  wss.on('connection', (ws: WebSocket) => {
-    sendSessions(ws);
-
-    ws.on('message', (data: Buffer) => {
-      try {
-        const message = JSON.parse(data.toString()) as WebSocketMessage;
-
-        if (message.type === 'focus' && message.sessionId) {
-          const sessions = getSessions();
-          const session = sessions.find((s) => s.session_id === message.sessionId);
-          if (session?.tty) {
-            const success = focusSession(session.tty);
-            ws.send(JSON.stringify({ type: 'focusResult', success }));
-          } else {
-            ws.send(
-              JSON.stringify({
-                type: 'focusResult',
-                success: false,
-                error: 'Session not found or no TTY',
-              })
-            );
-          }
-        } else if (message.type === 'sendText' && message.sessionId && message.text) {
-          const sessions = getSessions();
-          const session = sessions.find((s) => s.session_id === message.sessionId);
-          if (session?.tty) {
-            const result = sendTextToTerminal(session.tty, message.text);
-            ws.send(JSON.stringify({ type: 'sendTextResult', ...result }));
-          } else {
-            ws.send(
-              JSON.stringify({ type: 'sendTextResult', success: false, error: 'Session not found' })
-            );
-          }
-        }
-      } catch {
-        // Ignore invalid messages
-      }
-    });
-  });
+  setupWebSocketHandlers(wss);
 
   const storePath = getStorePath();
-  watcher = chokidar.watch(storePath, {
+  const watcher = chokidar.watch(storePath, {
     ignoreInitial: true,
     awaitWriteFinish: {
       stabilityThreshold: 100,
@@ -261,7 +224,7 @@ export function startServer(port = 3456): void {
 
   watcher.on('change', () => {
     const sessions = getSessions();
-    broadcast({ type: 'sessions', data: sessions });
+    broadcastToClients(wss, { type: 'sessions', data: sessions });
   });
 
   server.listen(port, '0.0.0.0', () => {

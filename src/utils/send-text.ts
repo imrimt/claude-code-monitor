@@ -54,11 +54,11 @@ tell application "iTerm2"
           select aTab
           tell aWindow to select
           activate
-          delay 0.1
+          delay 0.2
           tell application "System Events"
             tell process "iTerm2"
               keystroke "v" using command down
-              delay 0.05
+              delay 0.1
               keystroke return
             end tell
           end tell
@@ -89,11 +89,11 @@ tell application "Terminal"
         set selected of aTab to true
         set index of aWindow to 1
         activate
-        delay 0.1
+        delay 0.2
         tell application "System Events"
           tell process "Terminal"
             keystroke "v" using command down
-            delay 0.05
+            delay 0.1
             keystroke return
           end tell
         end tell
