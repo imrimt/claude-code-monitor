@@ -690,13 +690,6 @@
       border-radius: var(--radius-md);
     }
 
-    .desktop-url {
-      margin-top: 16px;
-      font-size: 14px;
-      color: var(--text-muted);
-      font-family: 'SF Mono', Menlo, monospace;
-    }
-
     @media (min-width: 1025px) {
       .app, .toast, .modal-bg {
         display: none !important;
@@ -716,7 +709,6 @@
       Scan the QR code below to access from your mobile device.
     </p>
     <img id="qrcode" class="desktop-qr" alt="QR Code">
-    <p class="desktop-url" id="desktopUrl"></p>
   </div>
 
   <div class="app">
@@ -993,8 +985,22 @@
     }
 
     function connect() {
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('token');
+
+      if (!token) {
+        $sessions.innerHTML = `
+          <div class="empty">
+            <div class="empty-icon">🔒</div>
+            <div class="empty-title">Unauthorized</div>
+            <div class="empty-text">Invalid or missing access token. Please scan the QR code from the terminal.</div>
+          </div>`;
+        setConn(false);
+        return;
+      }
+
       const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-      ws = new WebSocket(`${proto}//${location.host}`);
+      ws = new WebSocket(`${proto}//${location.host}?token=${token}`);
 
       ws.onopen = () => setConn(true);
       ws.onclose = () => {
@@ -1025,16 +1031,11 @@
     // Generate QR code for desktop warning using Google Charts API
     (function generateQRCode() {
       const qrImg = document.getElementById('qrcode');
-      const urlDisplay = document.getElementById('desktopUrl');
       const currentUrl = window.location.href;
 
       if (qrImg) {
         const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(currentUrl)}&bgcolor=1a1a1a&color=ffffff`;
         qrImg.src = qrApiUrl;
-      }
-
-      if (urlDisplay) {
-        urlDisplay.textContent = currentUrl;
       }
     })();
 

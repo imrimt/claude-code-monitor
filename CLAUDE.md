@@ -36,7 +36,7 @@ Claude Codeの複数セッションをリアルタイム監視するmacOS専用C
 
 - `src/bin/ccm.tsx` - CLIエントリーポイント（Commanderでコマンド定義）
 - `src/hook/handler.ts` - フックイベント処理（stdin読み取り→状態更新）
-- `src/store/file-store.ts` - セッション状態の永続化（JSON読み書き、タイムアウト管理）
+- `src/store/file-store.ts` - セッション状態の永続化（JSON読み書き、TTY生存確認）
 - `src/setup/index.ts` - `~/.claude/settings.json` へのフック自動設定
 - `src/server/index.ts` - HTTP + WebSocketサーバー（モバイルWeb用）
 - `src/components/` - InkベースのReactコンポーネント（Dashboard, SessionCard, Spinner）
@@ -67,7 +67,7 @@ Claude Codeの複数セッションをリアルタイム監視するmacOS専用C
 - `waiting_input`: 権限許可などの入力待ち（Notification + permission_promptで遷移）
 - `stopped`: セッション終了（Stopで遷移）
 
-セッションは30分でタイムアウト、またはTTYが存在しなくなると自動削除される。
+セッションはTTYが存在しなくなると自動削除される。
 
 ### モバイルWebインターフェース
 

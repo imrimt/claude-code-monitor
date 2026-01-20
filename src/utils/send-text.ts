@@ -136,24 +136,15 @@ return true
 }
 
 function sendTextToITerm2(tty: string, text: string): boolean {
-  console.log('[DEBUG] Trying iTerm2 for TTY:', tty);
-  const result = executeAppleScript(buildITerm2SendTextScript(tty, text));
-  console.log('[DEBUG] iTerm2 result:', result);
-  return result;
+  return executeAppleScript(buildITerm2SendTextScript(tty, text));
 }
 
 function sendTextToTerminalApp(tty: string, text: string): boolean {
-  console.log('[DEBUG] Trying Terminal.app for TTY:', tty);
-  const result = executeAppleScript(buildTerminalAppSendTextScript(tty, text));
-  console.log('[DEBUG] Terminal.app result:', result);
-  return result;
+  return executeAppleScript(buildTerminalAppSendTextScript(tty, text));
 }
 
 function sendTextToGhostty(text: string): boolean {
-  console.log('[DEBUG] Trying Ghostty');
-  const result = executeAppleScript(buildGhosttySendTextScript(text));
-  console.log('[DEBUG] Ghostty result:', result);
-  return result;
+  return executeAppleScript(buildGhosttySendTextScript(text));
 }
 
 /**

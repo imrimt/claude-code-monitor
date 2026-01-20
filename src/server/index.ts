@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { networkInterfaces } from 'node:os';
@@ -12,6 +13,13 @@ import { focusSession } from '../utils/focus.js';
 import { sendTextToTerminal } from '../utils/send-text.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+/**
+ * Generate a random authentication token.
+ */
+function generateAuthToken(): string {
+  return randomBytes(32).toString('hex');
+}
 
 interface WebSocketMessage {
   type: 'sessions' | 'focus' | 'sendText';
@@ -58,15 +66,12 @@ function handleFocusCommand(ws: WebSocket, sessionId: string): void {
  * Handle sendText command from WebSocket client.
  */
 function handleSendTextCommand(ws: WebSocket, sessionId: string, text: string): void {
-  console.log('[DEBUG] sendText received:', { sessionId, text: text.substring(0, 50) });
   const session = findSessionById(sessionId);
-  console.log('[DEBUG] session found:', session ? { tty: session.tty, cwd: session.cwd } : null);
   if (!session?.tty) {
     ws.send(JSON.stringify({ type: 'sendTextResult', success: false, error: 'Session not found' }));
     return;
   }
   const result = sendTextToTerminal(session.tty, text);
-  console.log('[DEBUG] sendTextToTerminal result:', result);
   ws.send(JSON.stringify({ type: 'sendTextResult', ...result }));
 }
 
@@ -115,8 +120,16 @@ function sendSessionsToClient(ws: WebSocket): void {
 /**
  * Setup WebSocket connection handlers.
  */
-function setupWebSocketHandlers(wss: WebSocketServer): void {
-  wss.on('connection', (ws: WebSocket) => {
+function setupWebSocketHandlers(wss: WebSocketServer, validToken: string): void {
+  wss.on('connection', (ws: WebSocket, req: IncomingMessage) => {
+    const url = new URL(req.url || '/', `ws://${req.headers.host}`);
+    const requestToken = url.searchParams.get('token');
+
+    if (requestToken !== validToken) {
+      ws.close(1008, 'Unauthorized');
+      return;
+    }
+
     sendSessionsToClient(ws);
     ws.on('message', (data: Buffer) => handleWebSocketMessage(ws, data));
   });
@@ -125,6 +138,7 @@ function setupWebSocketHandlers(wss: WebSocketServer): void {
 export interface ServerInfo {
   url: string;
   qrCode: string;
+  token: string;
   stop: () => void;
 }
 
@@ -157,9 +171,18 @@ function getContentType(path: string): string {
   return 'text/plain';
 }
 
-function serveStatic(req: IncomingMessage, res: ServerResponse): void {
+function serveStatic(req: IncomingMessage, res: ServerResponse, validToken: string): void {
+  const url = new URL(req.url || '/', `http://${req.headers.host}`);
+  const requestToken = url.searchParams.get('token');
+
+  if (requestToken !== validToken) {
+    res.writeHead(401, { 'Content-Type': 'text/plain' });
+    res.end('Unauthorized - Invalid or missing token');
+    return;
+  }
+
   const publicDir = join(__dirname, '../../public');
-  let filePath = req.url === '/' ? '/index.html' : req.url || '/index.html';
+  let filePath = url.pathname === '/' ? '/index.html' : url.pathname;
 
   // Prevent directory traversal
   filePath = filePath.replace(/\.\./g, '');
@@ -189,10 +212,10 @@ interface ServerComponents {
  * Create server components (HTTP server, WebSocket server, file watcher).
  * Shared by createMobileServer and startServer.
  */
-function createServerComponents(): ServerComponents {
-  const server = createServer(serveStatic);
+function createServerComponents(token: string): ServerComponents {
+  const server = createServer((req, res) => serveStatic(req, res, token));
   const wss = new WebSocketServer({ server });
-  setupWebSocketHandlers(wss);
+  setupWebSocketHandlers(wss, token);
 
   const storePath = getStorePath();
   const watcher = chokidar.watch(storePath, {
@@ -222,10 +245,11 @@ function stopServerComponents({ watcher, wss, server }: ServerComponents): void 
 
 export async function createMobileServer(port = 3456): Promise<ServerInfo> {
   const localIP = getLocalIP();
-  const url = `http://${localIP}:${port}`;
+  const token = generateAuthToken();
+  const url = `http://${localIP}:${port}?token=${token}`;
   const qrCode = await generateQRCode(url);
 
-  const components = createServerComponents();
+  const components = createServerComponents(token);
 
   await new Promise<void>((resolve) => {
     components.server.listen(port, '0.0.0.0', resolve);
@@ -234,6 +258,7 @@ export async function createMobileServer(port = 3456): Promise<ServerInfo> {
   return {
     url,
     qrCode,
+    token,
     stop: () => stopServerComponents(components),
   };
 }
@@ -241,9 +266,10 @@ export async function createMobileServer(port = 3456): Promise<ServerInfo> {
 // CLI standalone mode
 export function startServer(port = 3456): void {
   const localIP = getLocalIP();
-  const url = `http://${localIP}:${port}`;
+  const token = generateAuthToken();
+  const url = `http://${localIP}:${port}?token=${token}`;
 
-  const components = createServerComponents();
+  const components = createServerComponents(token);
 
   components.server.listen(port, '0.0.0.0', () => {
     console.log('\n  Claude Code Monitor - Mobile Web Interface\n');
