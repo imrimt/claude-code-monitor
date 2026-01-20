@@ -28,45 +28,64 @@ interface BroadcastMessage {
 const WEBSOCKET_OPEN = 1;
 
 /**
+ * Find a session by session ID.
+ */
+function findSessionById(sessionId: string): Session | undefined {
+  const sessions = getSessions();
+  return sessions.find((s) => s.session_id === sessionId);
+}
+
+/**
+ * Handle focus command from WebSocket client.
+ */
+function handleFocusCommand(ws: WebSocket, sessionId: string): void {
+  const session = findSessionById(sessionId);
+  if (!session?.tty) {
+    ws.send(
+      JSON.stringify({
+        type: 'focusResult',
+        success: false,
+        error: 'Session not found or no TTY',
+      })
+    );
+    return;
+  }
+  const success = focusSession(session.tty);
+  ws.send(JSON.stringify({ type: 'focusResult', success }));
+}
+
+/**
+ * Handle sendText command from WebSocket client.
+ */
+function handleSendTextCommand(ws: WebSocket, sessionId: string, text: string): void {
+  const session = findSessionById(sessionId);
+  if (!session?.tty) {
+    ws.send(JSON.stringify({ type: 'sendTextResult', success: false, error: 'Session not found' }));
+    return;
+  }
+  const result = sendTextToTerminal(session.tty, text);
+  ws.send(JSON.stringify({ type: 'sendTextResult', ...result }));
+}
+
+/**
  * Handle incoming WebSocket message from client.
  * Processes focus and sendText commands.
  */
 function handleWebSocketMessage(ws: WebSocket, data: Buffer): void {
+  let message: WebSocketMessage;
   try {
-    const message = JSON.parse(data.toString()) as WebSocketMessage;
-
-    if (message.type === 'focus' && message.sessionId) {
-      const sessions = getSessions();
-      const session = sessions.find((s) => s.session_id === message.sessionId);
-      if (session?.tty) {
-        const success = focusSession(session.tty);
-        ws.send(JSON.stringify({ type: 'focusResult', success }));
-      } else {
-        ws.send(
-          JSON.stringify({
-            type: 'focusResult',
-            success: false,
-            error: 'Session not found or no TTY',
-          })
-        );
-      }
-      return;
-    }
-
-    if (message.type === 'sendText' && message.sessionId && message.text) {
-      const sessions = getSessions();
-      const session = sessions.find((s) => s.session_id === message.sessionId);
-      if (session?.tty) {
-        const result = sendTextToTerminal(session.tty, message.text);
-        ws.send(JSON.stringify({ type: 'sendTextResult', ...result }));
-      } else {
-        ws.send(
-          JSON.stringify({ type: 'sendTextResult', success: false, error: 'Session not found' })
-        );
-      }
-    }
+    message = JSON.parse(data.toString()) as WebSocketMessage;
   } catch {
-    // Ignore invalid messages
+    return; // Ignore invalid messages
+  }
+
+  if (message.type === 'focus' && message.sessionId) {
+    handleFocusCommand(ws, message.sessionId);
+    return;
+  }
+
+  if (message.type === 'sendText' && message.sessionId && message.text) {
+    handleSendTextCommand(ws, message.sessionId, message.text);
   }
 }
 
@@ -157,21 +176,21 @@ function serveStatic(req: IncomingMessage, res: ServerResponse): void {
   }
 }
 
-export async function createMobileServer(port = 3456): Promise<ServerInfo> {
-  const localIP = getLocalIP();
-  const url = `http://${localIP}:${port}`;
+interface ServerComponents {
+  server: ReturnType<typeof createServer>;
+  wss: WebSocketServer;
+  watcher: ReturnType<typeof chokidar.watch>;
+}
 
-  // Generate QR code
-  const qrCode = await generateQRCode(url);
-
-  // HTTP server for static files
+/**
+ * Create server components (HTTP server, WebSocket server, file watcher).
+ * Shared by createMobileServer and startServer.
+ */
+function createServerComponents(): ServerComponents {
   const server = createServer(serveStatic);
-
-  // WebSocket server
   const wss = new WebSocketServer({ server });
   setupWebSocketHandlers(wss);
 
-  // Watch sessions.json for changes
   const storePath = getStorePath();
   const watcher = chokidar.watch(storePath, {
     ignoreInitial: true,
@@ -186,19 +205,34 @@ export async function createMobileServer(port = 3456): Promise<ServerInfo> {
     broadcastToClients(wss, { type: 'sessions', data: sessions });
   });
 
-  // Start server
+  return { server, wss, watcher };
+}
+
+/**
+ * Stop all server components.
+ */
+function stopServerComponents({ watcher, wss, server }: ServerComponents): void {
+  watcher.close();
+  wss.close();
+  server.close();
+}
+
+export async function createMobileServer(port = 3456): Promise<ServerInfo> {
+  const localIP = getLocalIP();
+  const url = `http://${localIP}:${port}`;
+  const qrCode = await generateQRCode(url);
+
+  const components = createServerComponents();
+
   await new Promise<void>((resolve) => {
-    server.listen(port, '0.0.0.0', resolve);
+    components.server.listen(port, '0.0.0.0', resolve);
   });
 
-  // Return server info with stop function
-  const stop = () => {
-    watcher.close();
-    wss.close();
-    server.close();
+  return {
+    url,
+    qrCode,
+    stop: () => stopServerComponents(components),
   };
-
-  return { url, qrCode, stop };
 }
 
 // CLI standalone mode
@@ -206,28 +240,9 @@ export function startServer(port = 3456): void {
   const localIP = getLocalIP();
   const url = `http://${localIP}:${port}`;
 
-  // HTTP server for static files
-  const server = createServer(serveStatic);
+  const components = createServerComponents();
 
-  // WebSocket server
-  const wss = new WebSocketServer({ server });
-  setupWebSocketHandlers(wss);
-
-  const storePath = getStorePath();
-  const watcher = chokidar.watch(storePath, {
-    ignoreInitial: true,
-    awaitWriteFinish: {
-      stabilityThreshold: 100,
-      pollInterval: 50,
-    },
-  });
-
-  watcher.on('change', () => {
-    const sessions = getSessions();
-    broadcastToClients(wss, { type: 'sessions', data: sessions });
-  });
-
-  server.listen(port, '0.0.0.0', () => {
+  components.server.listen(port, '0.0.0.0', () => {
     console.log('\n  Claude Code Monitor - Mobile Web Interface\n');
     console.log(`  Server running at: ${url}\n`);
     console.log('  Scan this QR code with your phone:\n');
@@ -235,12 +250,9 @@ export function startServer(port = 3456): void {
     console.log('\n  Press Ctrl+C to stop the server.\n');
   });
 
-  // Graceful shutdown
   process.on('SIGINT', () => {
     console.log('\n  Shutting down...');
-    watcher.close();
-    wss.close();
-    server.close();
+    stopServerComponents(components);
     process.exit(0);
   });
 }

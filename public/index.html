@@ -268,6 +268,7 @@
       font-size: 14px;
       color: var(--text-primary);
       line-height: 1.7;
+      overflow-x: auto;
     }
 
     .card-msg.open .card-msg-text { display: none; }
@@ -347,7 +348,8 @@
       color: var(--text-primary);
     }
     .card-msg-full table {
-      width: 100%;
+      width: max-content;
+      min-width: 100%;
       border-collapse: collapse;
       margin: 14px 0;
       font-size: 13px;
@@ -356,6 +358,7 @@
       padding: 8px 12px;
       border: 1px solid var(--border-default);
       text-align: left;
+      white-space: nowrap;
     }
     .card-msg-full th {
       background: var(--bg-primary);
@@ -704,6 +707,13 @@
     const $sendBtn = document.getElementById('sendBtn');
     const $warn = document.getElementById('warn');
 
+    // Timing constants
+    const TOAST_DURATION_MS = 2500;
+    const RECONNECT_DELAY_MS = 2000;
+    const SEND_TIMEOUT_MS = 5000;
+    const MODAL_FOCUS_DELAY_MS = 150;
+    const SWIPE_THRESHOLD_PX = 100;
+
     let ws = null;
     let targetSession = null;
     let openMsgs = new Set();
@@ -728,7 +738,7 @@
     function toast(msg, type = '') {
       $toast.textContent = msg;
       $toast.className = `toast show ${type}`;
-      setTimeout(() => $toast.className = 'toast', 2500);
+      setTimeout(() => $toast.className = 'toast', TOAST_DURATION_MS);
     }
 
     function setConn(ok) {
@@ -742,26 +752,26 @@
       return parts[parts.length - 1] || path;
     }
 
-    function fmtPath(p) {
-      if (!p) return '';
-      return p.replace(/^\/Users\/[^/]+/, '~');
+    function formatPath(path) {
+      if (!path) return '';
+      return path.replace(/^\/Users\/[^/]+/, '~');
     }
 
-    function truncate(s, maxLen = 50) {
-      if (!s) return '';
-      const t = s.replace(/[#*`_~\[\]]/g, '').replace(/\s+/g, ' ').trim();
-      if (t.length <= maxLen) return t;
-      return t.slice(0, maxLen) + '...';
+    function truncate(text, maxLen = 50) {
+      if (!text) return '';
+      const cleanedText = text.replace(/[#*`_~\[\]]/g, '').replace(/\s+/g, ' ').trim();
+      if (cleanedText.length <= maxLen) return cleanedText;
+      return cleanedText.slice(0, maxLen) + '...';
     }
 
-    function md(s) {
+    function renderMarkdown(markdownText) {
       if (typeof marked !== 'undefined') {
         marked.setOptions({ breaks: true, gfm: true });
-        return marked.parse(s);
+        return marked.parse(markdownText);
       }
-      const d = document.createElement('div');
-      d.textContent = s;
-      return d.innerHTML;
+      const container = document.createElement('div');
+      container.textContent = markdownText;
+      return container.innerHTML;
     }
 
     function toggleMsg(id, e) {
@@ -784,7 +794,7 @@
       $warn.classList.remove('show');
       $sendBtn.disabled = true;
       $modal.classList.add('show');
-      setTimeout(() => $msgInput.focus(), 150);
+      setTimeout(() => $msgInput.focus(), MODAL_FOCUS_DELAY_MS);
     }
 
     function closeModal() {
@@ -793,8 +803,8 @@
     }
 
     function sendMsg() {
-      const t = $msgInput.value.trim();
-      if (!t || !targetSession) return;
+      const messageText = $msgInput.value.trim();
+      if (!messageText || !targetSession) return;
       if (!ws || ws.readyState !== 1) {
         toast('Not connected', 'err');
         return;
@@ -805,9 +815,8 @@
       $sendBtn.disabled = true;
       $sendBtn.textContent = 'Sending...';
 
-      ws.send(JSON.stringify({ type: 'sendText', sessionId: targetSession, text: t }));
+      ws.send(JSON.stringify({ type: 'sendText', sessionId: targetSession, text: messageText }));
 
-      // Timeout after 5 seconds
       setTimeout(() => {
         if (pendingSend) {
           pendingSend = null;
@@ -816,7 +825,7 @@
           toast('Send timeout', 'err');
           closeModal();
         }
-      }, 5000);
+      }, SEND_TIMEOUT_MS);
     }
 
     function focusTerminal(id, e) {
@@ -827,9 +836,9 @@
     }
 
     $msgInput.addEventListener('input', () => {
-      const t = $msgInput.value.trim();
-      $sendBtn.disabled = !t;
-      $warn.classList.toggle('show', DANGER.some(r => r.test(t)));
+      const inputText = $msgInput.value.trim();
+      $sendBtn.disabled = !inputText;
+      $warn.classList.toggle('show', DANGER.some(pattern => pattern.test(inputText)));
     });
 
     $msgInput.addEventListener('keydown', (e) => {
@@ -844,29 +853,30 @@
       if (e.target === $modal) closeModal();
     });
 
-    // Swipe to close
-    let ty = 0, cy = 0, drag = false;
-    const $m = $modal.querySelector('.modal');
-    $m.addEventListener('touchstart', (e) => {
-      const r = $m.getBoundingClientRect();
-      if (e.touches[0].clientY - r.top < 50) {
-        ty = cy = e.touches[0].clientY;
-        drag = true;
-        $m.style.transition = 'none';
+    // Swipe to close modal
+    let touchStartY = 0, currentTouchY = 0, isDragging = false;
+    const SWIPE_START_ZONE_PX = 50;
+    const $modalContent = $modal.querySelector('.modal');
+    $modalContent.addEventListener('touchstart', (e) => {
+      const rect = $modalContent.getBoundingClientRect();
+      if (e.touches[0].clientY - rect.top < SWIPE_START_ZONE_PX) {
+        touchStartY = currentTouchY = e.touches[0].clientY;
+        isDragging = true;
+        $modalContent.style.transition = 'none';
       }
     }, { passive: true });
-    $m.addEventListener('touchmove', (e) => {
-      if (!drag) return;
-      cy = e.touches[0].clientY;
-      const d = cy - ty;
-      if (d > 0) $m.style.transform = `translateY(${d}px)`;
+    $modalContent.addEventListener('touchmove', (e) => {
+      if (!isDragging) return;
+      currentTouchY = e.touches[0].clientY;
+      const dragDistance = currentTouchY - touchStartY;
+      if (dragDistance > 0) $modalContent.style.transform = `translateY(${dragDistance}px)`;
     }, { passive: true });
-    $m.addEventListener('touchend', () => {
-      if (!drag) return;
-      drag = false;
-      $m.style.transition = '';
-      if (cy - ty > 100) closeModal();
-      $m.style.transform = '';
+    $modalContent.addEventListener('touchend', () => {
+      if (!isDragging) return;
+      isDragging = false;
+      $modalContent.style.transition = '';
+      if (currentTouchY - touchStartY > SWIPE_THRESHOLD_PX) closeModal();
+      $modalContent.style.transform = '';
     });
 
     function render(list) {
@@ -880,38 +890,38 @@
         return;
       }
 
-      $sessions.innerHTML = list.map(s => {
-        const isOpen = openMsgs.has(s.session_id);
-        const dirName = getDirName(s.cwd);
-        const fullPath = fmtPath(s.cwd);
-        const status = STATUS[s.status];
+      $sessions.innerHTML = list.map(session => {
+        const isOpen = openMsgs.has(session.session_id);
+        const dirName = getDirName(session.cwd);
+        const fullPath = formatPath(session.cwd);
+        const statusInfo = STATUS[session.status];
 
         return `
-          <div class="card ${s.status}">
+          <div class="card ${session.status}">
             <div class="card-accent"></div>
             <div class="card-content">
-              <span class="card-status-label">${status.label}</span>
+              <span class="card-status-label">${statusInfo.label}</span>
               <div class="card-header">
-                <div class="status-icon">${status.icon}</div>
+                <div class="status-icon">${statusInfo.icon}</div>
                 <div class="card-info">
                   <div class="card-dir">${dirName}</div>
                   <div class="card-path">${fullPath}</div>
                 </div>
               </div>
-              ${s.lastMessage ? `
-              <div class="card-msg ${isOpen ? 'open' : ''}" data-msg="${s.session_id}" onclick="toggleMsg('${s.session_id}', event)">
+              ${session.lastMessage ? `
+              <div class="card-msg ${isOpen ? 'open' : ''}" data-msg="${session.session_id}" onclick="toggleMsg('${session.session_id}', event)">
                 <div class="card-msg-row">
-                  <span class="card-msg-text">${truncate(s.lastMessage)}</span>
+                  <span class="card-msg-text">${truncate(session.lastMessage)}</span>
                   <span class="card-msg-toggle">▼</span>
                 </div>
-                <div class="card-msg-full">${md(s.lastMessage)}</div>
+                <div class="card-msg-full">${renderMarkdown(session.lastMessage)}</div>
               </div>
               ` : ''}
               <div class="card-actions">
-                <button class="btn btn-primary" onclick="focusTerminal('${s.session_id}', event)">
+                <button class="btn btn-primary" onclick="focusTerminal('${session.session_id}', event)">
                   Focus Terminal
                 </button>
-                <button class="btn btn-secondary" onclick="openModal('${s.session_id}', event)">
+                <button class="btn btn-secondary" onclick="openModal('${session.session_id}', event)">
                   Send
                 </button>
               </div>
@@ -927,20 +937,22 @@
       ws.onopen = () => setConn(true);
       ws.onclose = () => {
         setConn(false);
-        setTimeout(connect, 2000);
+        setTimeout(connect, RECONNECT_DELAY_MS);
       };
       ws.onerror = () => setConn(false);
-      ws.onmessage = (e) => {
+      ws.onmessage = (event) => {
         try {
-          const m = JSON.parse(e.data);
-          if (m.type === 'sessions') render(m.data);
-          else if (m.type === 'focusResult') toast(m.success ? 'Focused!' : 'Failed to focus', m.success ? 'ok' : 'err');
-          else if (m.type === 'sendTextResult') {
+          const message = JSON.parse(event.data);
+          if (message.type === 'sessions') {
+            render(message.data);
+          } else if (message.type === 'focusResult') {
+            toast(message.success ? 'Focused!' : 'Failed to focus', message.success ? 'ok' : 'err');
+          } else if (message.type === 'sendTextResult') {
             pendingSend = null;
             $sendBtn.disabled = false;
             $sendBtn.textContent = 'Send';
-            toast(m.success ? 'Sent!' : (m.error || 'Failed'), m.success ? 'ok' : 'err');
-            if (m.success) closeModal();
+            toast(message.success ? 'Sent!' : (message.error || 'Failed'), message.success ? 'ok' : 'err');
+            if (message.success) closeModal();
           }
         } catch {}
       };
