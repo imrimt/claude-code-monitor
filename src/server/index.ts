@@ -71,7 +71,10 @@ function serveStatic(req: IncomingMessage, res: ServerResponse): void {
 
   try {
     const content = readFileSync(fullPath, 'utf-8');
-    res.writeHead(200, { 'Content-Type': getContentType(filePath) });
+    res.writeHead(200, {
+      'Content-Type': getContentType(filePath),
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+    });
     res.end(content);
   } catch {
     res.writeHead(404);
@@ -122,6 +125,8 @@ export async function createMobileServer(port = 3456): Promise<ServerInfo> {
           if (session?.tty) {
             const success = focusSession(session.tty);
             ws.send(JSON.stringify({ type: 'focusResult', success }));
+          } else {
+            ws.send(JSON.stringify({ type: 'focusResult', success: false, error: 'Session not found or no TTY' }));
           }
         } else if (message.type === 'sendText' && message.sessionId && message.text) {
           // Find session by ID and send text
@@ -212,6 +217,8 @@ export function startServer(port = 3456): void {
           if (session?.tty) {
             const success = focusSession(session.tty);
             ws.send(JSON.stringify({ type: 'focusResult', success }));
+          } else {
+            ws.send(JSON.stringify({ type: 'focusResult', success: false, error: 'Session not found or no TTY' }));
           }
         } else if (message.type === 'sendText' && message.sessionId && message.text) {
           const sessions = getSessions();
