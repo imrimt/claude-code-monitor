@@ -320,22 +320,22 @@ describe('file-store', () => {
       expect(sessions[1].session_id).toBe('new');
     });
 
-    it('should remove expired sessions', async () => {
+    it('should not remove sessions based on time (no timeout)', async () => {
       const { writeStore, getSessions } = await import('../src/store/file-store.js');
       const now = Date.now();
       const thirtyOneMinutesAgo = now - 31 * 60 * 1000;
 
       writeStore({
         sessions: {
-          'expired:/dev/ttys001': {
-            session_id: 'expired',
+          'old:/dev/ttys001': {
+            session_id: 'old',
             cwd: '/tmp',
             tty: '/dev/ttys001',
             status: 'running',
             updated_at: new Date(thirtyOneMinutesAgo).toISOString(),
           },
-          'active:/dev/ttys002': {
-            session_id: 'active',
+          'new:/dev/ttys002': {
+            session_id: 'new',
             cwd: '/tmp',
             tty: '/dev/ttys002',
             status: 'running',
@@ -347,8 +347,8 @@ describe('file-store', () => {
 
       const sessions = getSessions();
 
-      expect(sessions).toHaveLength(1);
-      expect(sessions[0].session_id).toBe('active');
+      // Sessions are not removed based on time, only TTY existence
+      expect(sessions).toHaveLength(2);
     });
   });
 

@@ -136,17 +136,12 @@
 
     .card.waiting_input .card-accent {
       background: var(--status-waiting);
-      animation: pulse-bar 1.5s ease-in-out infinite;
     }
 
     .card.stopped .card-accent {
       background: var(--status-stopped);
     }
 
-    @keyframes pulse-bar {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
 
     .card-content {
       padding: 14px 16px;
@@ -194,7 +189,6 @@
     .card.waiting_input .status-icon {
       background: var(--status-waiting-bg);
       color: var(--status-waiting);
-      animation: pulse-icon 1.5s ease-in-out infinite;
     }
 
     .card.stopped .status-icon {
@@ -202,10 +196,6 @@
       color: var(--status-stopped);
     }
 
-    @keyframes pulse-icon {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.05); }
-    }
 
     .card-info {
       flex: 1;
@@ -601,7 +591,7 @@
 <body>
   <div class="app">
     <header class="header">
-      <h1 class="header-title">Claude Monitor</h1>
+      <h1 class="header-title">Claude Code Monitor</h1>
       <div class="conn-badge" id="connStatus">
         <span class="conn-dot"></span>
         <span id="connText">Connecting</span>

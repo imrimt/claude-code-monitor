@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { SESSION_TIMEOUT_MS, WRITE_DEBOUNCE_MS } from '../constants.js';
+import { WRITE_DEBOUNCE_MS } from '../constants.js';
 import type { HookEvent, Session, SessionStatus, StoreData } from '../types/index.js';
 import { getLastAssistantMessage } from '../utils/transcript.js';
 import { isTtyAlive } from '../utils/tty-cache.js';
@@ -192,16 +192,13 @@ export function updateSession(event: HookEvent): Session {
 
 export function getSessions(): Session[] {
   const store = readStore();
-  const now = Date.now();
 
   let hasChanges = false;
   for (const [key, session] of Object.entries(store.sessions)) {
-    const lastUpdateMs = new Date(session.updated_at).getTime();
-    const isSessionActive = now - lastUpdateMs <= SESSION_TIMEOUT_MS;
     const isTtyStillAlive = isTtyAlive(session.tty);
 
-    const shouldRemoveSession = !isSessionActive || !isTtyStillAlive;
-    if (shouldRemoveSession) {
+    // Only remove sessions when TTY no longer exists
+    if (!isTtyStillAlive) {
       delete store.sessions[key];
       hasChanges = true;
     }
