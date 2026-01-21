@@ -15,6 +15,7 @@
 ## 📑 Table of Contents
 
 - [✨ Features](#-features)
+- [📱 Mobile Web Interface](#-mobile-web-interface)
 - [📋 Requirements](#-requirements)
 - [🚀 Installation](#-installation)
 - [⚡ Quick Start](#-quick-start)
@@ -39,6 +40,43 @@
 - 🎯 **Tab Focus** - Instantly switch to the terminal tab of a selected session
 - 🎨 **Simple UI** - Displays only status and directory
 - ⚡ **Easy Setup** - One command `ccm` for automatic setup and launch
+- 📱 **Mobile Web** - Monitor and control sessions from your smartphone
+
+---
+
+## 📱 Mobile Web Interface
+
+Monitor Claude Code sessions from your smartphone.
+
+### Features
+
+- 📊 Real-time session status via WebSocket
+- 💬 View latest Claude messages
+- 🎯 Focus terminal sessions remotely
+- ✉️ Send text messages to terminal
+
+### Usage
+
+1. Run `ccm` or `ccm --qr` to start monitoring
+2. Press `h` to show QR code
+3. Scan QR code with your smartphone
+
+### Standalone Server
+
+Run web server without TUI:
+
+```bash
+ccm serve           # Default port 3456
+ccm serve -p 8080   # Custom port
+```
+
+### Security
+
+> **Important**: Your smartphone and Mac must be on the **same Wi-Fi network**.
+
+- **Token Authentication**: Each session generates a unique authentication token included in the URL
+- **Local Network Only**: The server is only accessible within your local network
+- **Do not share the URL**: The URL contains an authentication token - treat it like a password
 
 ---
 
@@ -86,11 +124,13 @@ On first run, it automatically sets up hooks and launches the monitor.
 |---------|-------|-------------|
 | `ccm` | - | Launch monitor TUI (auto-setup if not configured) |
 | `ccm watch` | `ccm w` | Launch monitor TUI |
+| `ccm serve` | `ccm s` | Start web server for mobile monitoring |
 | `ccm setup` | - | Configure Claude Code hooks |
 | `ccm list` | `ccm ls` | List sessions |
 | `ccm clear` | - | Clear all sessions |
 | `ccm --version` | `ccm -V` | Show version |
 | `ccm --help` | `ccm -h` | Show help |
+| `ccm --qr` | - | Launch monitor with QR code visible |
 
 ---
 
@@ -102,6 +142,7 @@ On first run, it automatically sets up hooks and launches the monitor.
 | `↓` / `j` | Move down |
 | `Enter` / `f` | Focus selected session |
 | `1-9` | Quick select & focus by number |
+| `h` | Show/Hide QR code for mobile access |
 | `c` | Clear all sessions |
 | `q` / `Esc` | Quit |
 
@@ -196,9 +237,10 @@ rm ~/.claude-monitor/sessions.json
 
 ## 🔒 Security
 
+- **No data sent to external servers** - All session data stays on your machine
 - This tool modifies `~/.claude/settings.json` to register hooks
 - Focus feature uses AppleScript to control terminal applications
-- All data is stored locally; no network requests are made
+- **Mobile Web**: Token-based authentication, accessible only on local network (same Wi-Fi required)
 
 ---
 
