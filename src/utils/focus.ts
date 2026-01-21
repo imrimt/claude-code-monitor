@@ -1,4 +1,5 @@
-import { execFileSync } from 'node:child_process';
+import { executeAppleScript } from './applescript.js';
+import { executeWithTerminalFallback } from './terminal-strategy.js';
 
 /**
  * Sanitize a string for safe use in AppleScript.
@@ -15,24 +16,20 @@ export function sanitizeForAppleScript(str: string): string {
 }
 
 /**
+ * TTY path pattern for validation.
+ * Matches:
+ *   - macOS: /dev/ttys000, /dev/tty000
+ *   - Linux: /dev/pts/0
+ * @internal
+ */
+const TTY_PATH_PATTERN = /^\/dev\/(ttys?\d+|pts\/\d+)$/;
+
+/**
  * Validate TTY path format.
- * Only allows paths like /dev/ttys000, /dev/pts/0, etc.
  * @internal
  */
 export function isValidTtyPath(tty: string): boolean {
-  return /^\/dev\/(ttys?\d+|pts\/\d+)$/.test(tty);
-}
-
-function executeAppleScript(script: string): boolean {
-  try {
-    const result = execFileSync('osascript', ['-e', script], {
-      encoding: 'utf-8',
-      stdio: ['pipe', 'pipe', 'pipe'],
-    }).trim();
-    return result === 'true';
-  } catch {
-    return false;
-  }
+  return TTY_PATH_PATTERN.test(tty);
 }
 
 function buildITerm2Script(tty: string): string {
@@ -105,14 +102,11 @@ export function focusSession(tty: string): boolean {
   if (!isMacOS()) return false;
   if (!isValidTtyPath(tty)) return false;
 
-  // Try each terminal in order (use the first one that succeeds)
-  const focusStrategies = [
-    () => focusITerm2(tty),
-    () => focusTerminalApp(tty),
-    () => focusGhostty(),
-  ];
-
-  return focusStrategies.some((tryFocus) => tryFocus());
+  return executeWithTerminalFallback({
+    iTerm2: () => focusITerm2(tty),
+    terminalApp: () => focusTerminalApp(tty),
+    ghostty: () => focusGhostty(),
+  });
 }
 
 export function getSupportedTerminals(): string[] {

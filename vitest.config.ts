@@ -21,10 +21,17 @@ export default defineConfig({
         'src/components/**',
         'src/hooks/**',
         'src/index.ts',
+        'src/types/**', // Type definitions only
         'src/setup/**', // Interactive setup (requires user input)
+        'src/server/**', // WebSocket/HTTP server (requires network)
         'src/utils/prompt.ts', // Interactive prompts
         'src/utils/status.ts', // UI display helpers
         'src/utils/time.ts', // Simple formatters
+        'src/utils/applescript.ts', // macOS AppleScript execution
+        'src/utils/stdin.ts', // stdin reading
+        'src/utils/transcript.ts', // File system transcript operations
+        'src/utils/terminal-strategy.ts', // AppleScript terminal strategy
+        'src/utils/tty-cache.ts', // macOS TTY operations
       ],
       thresholds: {
         lines: 35,

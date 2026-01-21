@@ -13,6 +13,7 @@ export interface HookEvent {
   tty?: string;
   hook_event_name: HookEventName;
   notification_type?: string;
+  transcript_path?: string;
 }
 
 // Session status
@@ -26,6 +27,7 @@ export interface Session {
   status: SessionStatus;
   created_at: string;
   updated_at: string;
+  lastMessage?: string;
 }
 
 // File store data structure

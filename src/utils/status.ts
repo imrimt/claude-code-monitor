@@ -9,10 +9,10 @@ export interface StatusDisplay {
 export function getStatusDisplay(status: SessionStatus): StatusDisplay {
   switch (status) {
     case 'running':
-      return { symbol: '●', color: 'green', label: 'Running' };
+      return { symbol: '●', color: 'gray', label: 'Running' };
     case 'waiting_input':
       return { symbol: '◐', color: 'yellow', label: 'Waiting' };
     case 'stopped':
-      return { symbol: '✓', color: 'cyan', label: 'Done' };
+      return { symbol: '✓', color: 'green', label: 'Done' };
   }
 }

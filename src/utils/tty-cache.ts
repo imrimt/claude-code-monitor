@@ -50,11 +50,3 @@ export function isTtyAlive(tty: string | undefined): boolean {
   evictOldestIfNeeded();
   return alive;
 }
-
-/**
- * Clear the TTY cache (useful for testing)
- * @internal
- */
-export function clearTtyCache(): void {
-  ttyCache.clear();
-}

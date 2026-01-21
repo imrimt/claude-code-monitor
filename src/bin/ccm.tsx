@@ -5,6 +5,7 @@ import { Command } from 'commander';
 import { render } from 'ink';
 import { Dashboard } from '../components/Dashboard.js';
 import { handleHookEvent } from '../hook/handler.js';
+import { startServer } from '../server/index.js';
 import { isHooksConfigured, setupHooks } from '../setup/index.js';
 import { clearSessions, getSessions } from '../store/file-store.js';
 import { getStatusDisplay } from '../utils/status.js';
@@ -46,15 +47,33 @@ function getTtyFromAncestors(): string | undefined {
   return undefined;
 }
 
+interface DashboardOptions {
+  qr?: boolean;
+}
+
 /**
  * Run TUI with alternate screen buffer
  */
-async function runWithAltScreen(renderFn: () => ReturnType<typeof render>) {
+async function runWithAltScreen(options: DashboardOptions = {}) {
   process.stdout.write(ENTER_ALT_SCREEN);
-  const { waitUntilExit } = renderFn();
+  // カーソルを非表示にして、より安定したレンダリングを行う
+  process.stdout.write('\x1b[?25l');
+
+  const instance = render(<Dashboard initialShowQr={options.qr} />, { patchConsole: false });
+
+  // リサイズ時にInkの描画をクリアして再描画
+  const handleResize = () => {
+    instance.clear();
+    instance.rerender(<Dashboard initialShowQr={options.qr} />);
+  };
+  process.stdout.on('resize', handleResize);
+
   try {
-    await waitUntilExit();
+    await instance.waitUntilExit();
   } finally {
+    process.stdout.off('resize', handleResize);
+    // カーソルを再表示
+    process.stdout.write('\x1b[?25h');
     process.stdout.write(EXIT_ALT_SCREEN);
   }
 }
@@ -64,14 +83,16 @@ const program = new Command();
 program
   .name('ccm')
   .description('Claude Code Monitor - CLI-based session monitoring')
-  .version(pkg.version);
+  .version(pkg.version)
+  .option('--qr', 'Show QR code for mobile access');
 
 program
   .command('watch')
   .alias('w')
   .description('Start the monitoring TUI')
-  .action(async () => {
-    await runWithAltScreen(() => render(<Dashboard />));
+  .option('--qr', 'Show QR code for mobile access')
+  .action(async (options: { qr?: boolean }) => {
+    await runWithAltScreen({ qr: options.qr });
   });
 
 program
@@ -119,12 +140,22 @@ program
     await setupHooks();
   });
 
+program
+  .command('serve')
+  .alias('s')
+  .description('Start web server for mobile monitoring')
+  .option('-p, --port <port>', 'Port number', '3456')
+  .action(async (options: { port: string }) => {
+    const port = parseInt(options.port, 10);
+    await startServer(port);
+  });
+
 /**
- * Default action (when launched without arguments)
+ * Default action (when launched without arguments or with --qr only)
  * - Run setup if not configured
  * - Launch monitor if already configured
  */
-async function defaultAction() {
+async function defaultAction(options: DashboardOptions = {}) {
   if (!isHooksConfigured()) {
     console.log('Initial setup required.\n');
     await setupHooks();
@@ -138,12 +169,13 @@ async function defaultAction() {
   }
 
   // Launch monitor
-  await runWithAltScreen(() => render(<Dashboard />));
+  await runWithAltScreen(options);
 }
 
-// Default action when executed without commands
-if (process.argv.length === 2) {
-  defaultAction().catch(console.error);
-} else {
-  program.parse();
-}
+// Handle default action (no subcommand)
+program.action(async () => {
+  const options = program.opts<{ qr?: boolean }>();
+  await defaultAction({ qr: options.qr });
+});
+
+program.parse();

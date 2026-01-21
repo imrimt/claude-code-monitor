@@ -4,7 +4,6 @@ import { memo } from 'react';
 import type { Session } from '../types/index.js';
 import { getStatusDisplay } from '../utils/status.js';
 import { formatRelativeTime } from '../utils/time.js';
-import { Spinner } from './Spinner.js';
 
 interface SessionCardProps {
   session: Session;
@@ -25,7 +24,6 @@ export const SessionCard = memo(function SessionCard({
   const { symbol, color, label } = getStatusDisplay(session.status);
   const dir = abbreviateHomePath(session.cwd);
   const relativeTime = formatRelativeTime(session.updated_at);
-  const isRunning = session.status === 'running';
 
   return (
     <Box paddingX={1}>
@@ -34,16 +32,9 @@ export const SessionCard = memo(function SessionCard({
       </Text>
       <Text> </Text>
       <Box width={10}>
-        {isRunning ? (
-          <>
-            <Spinner color="green" />
-            <Text color={color}> {label}</Text>
-          </>
-        ) : (
-          <Text color={color}>
-            {symbol} {label}
-          </Text>
-        )}
+        <Text color={color}>
+          {symbol} {label}
+        </Text>
       </Box>
       <Text> </Text>
       <Text dimColor>{relativeTime.padEnd(8)}</Text>
