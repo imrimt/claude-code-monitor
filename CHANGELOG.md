@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 2026-01-22
+
+### Security
+
+- Fix XSS vulnerabilities in mobile web UI
+  - Add `escapeHtml()` for all user-provided content
+  - Add `isValidSessionId()` validation
+  - Replace inline onclick with event delegation pattern
+- Enhance AppleScript sanitization (escape `$` and backtick characters)
+
+### Fixed
+
+- Add WebSocket client error handler to prevent process crashes
+- Fix race condition in useServer hook when component unmounts during async operation
+- Close net server on port availability check error
+
+### Changed
+
+- Add SIGTERM handler for graceful shutdown in containerized environments (Docker/K8s)
+- Terminate all WebSocket clients explicitly before server shutdown
+
+## [1.1.1] - 2026-01-22
+
+### Changed
+
+- Documentation improvements (README, CLAUDE.md)
+
 ## [1.1.0] - 2026-01-22
 
 ### Added
