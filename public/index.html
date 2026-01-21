@@ -1062,8 +1062,10 @@
       const swipeDistance = currentTouchY - touchStartY;
       if (swipeDistance > SWIPE_THRESHOLD_PX) {
         closeModal();
+        setTimeout(() => { $modalContent.style.transform = ''; }, 300);
+      } else {
+        $modalContent.style.transform = '';
       }
-      $modalContent.style.transform = '';
     }
 
     // Enable swipe on handle and header area
