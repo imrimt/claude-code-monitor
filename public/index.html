@@ -18,22 +18,22 @@
     :root {
       --bg-primary: #0a0a0a;
       --bg-card: #141414;
-      --bg-card-hover: #1c1c1c;
+      --bg-card-hover: #1a1a1a;
       --bg-input: #1e1e1e;
       --border-subtle: #1f1f1f;
       --border-default: #2a2a2a;
       --text-primary: #f5f5f5;
       --text-secondary: #a8a8a8;
-      --text-muted: #5c5c5c;
+      --text-muted: #666;
       --status-running: #22c55e;
-      --status-running-bg: rgba(34, 197, 94, 0.12);
-      --status-running-glow: rgba(34, 197, 94, 0.25);
+      --status-running-bg: rgba(34, 197, 94, 0.15);
+      --status-running-border: rgba(34, 197, 94, 0.3);
       --status-waiting: #f59e0b;
-      --status-waiting-bg: rgba(245, 158, 11, 0.12);
-      --status-waiting-glow: rgba(245, 158, 11, 0.25);
+      --status-waiting-bg: rgba(245, 158, 11, 0.15);
+      --status-waiting-border: rgba(245, 158, 11, 0.3);
       --status-stopped: #71717a;
-      --status-stopped-bg: rgba(113, 113, 122, 0.12);
-      --status-stopped-glow: rgba(113, 113, 122, 0.15);
+      --status-stopped-bg: rgba(113, 113, 122, 0.1);
+      --status-stopped-border: rgba(113, 113, 122, 0.2);
       --accent: #6366f1;
       --accent-hover: #818cf8;
       --accent-glow: rgba(99, 102, 241, 0.3);
@@ -41,10 +41,9 @@
       --radius-sm: 10px;
       --radius-md: 14px;
       --radius-lg: 20px;
-      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.3);
-      --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.35), 0 2px 4px rgba(0, 0, 0, 0.25);
-      --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.5), 0 6px 10px rgba(0, 0, 0, 0.35);
-      --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.2);
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+      --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.5);
     }
 
     body {
@@ -64,74 +63,20 @@
       padding: 16px;
     }
 
-    /* Compact Header */
+    /* Header */
     .header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 24px;
-      padding-bottom: 18px;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
       border-bottom: 1px solid var(--border-subtle);
     }
 
     .header-title {
-      font-size: 19px;
+      font-size: 18px;
       font-weight: 700;
       letter-spacing: -0.4px;
-      background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .conn-badge {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 14px;
-      border-radius: 22px;
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 0.2px;
-      background: linear-gradient(145deg, var(--bg-card) 0%, #111111 100%);
-      border: 1px solid var(--border-default);
-      color: var(--text-muted);
-      box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.03);
-      transition: all 0.3s ease;
-    }
-
-    .conn-badge.online {
-      background: linear-gradient(145deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.08) 100%);
-      border-color: rgba(34, 197, 94, 0.25);
-      color: var(--status-running);
-      box-shadow: var(--shadow-sm), 0 0 16px var(--status-running-glow), inset 0 1px 0 rgba(34, 197, 94, 0.1);
-    }
-
-    .conn-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: currentColor;
-      box-shadow: 0 0 6px currentColor;
-      position: relative;
-    }
-
-    .conn-dot::after {
-      content: '';
-      position: absolute;
-      inset: -2px;
-      border-radius: 50%;
-      border: 1px solid currentColor;
-      opacity: 0.3;
-    }
-
-    .conn-badge.online .conn-dot {
-      animation: pulse 2s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; box-shadow: 0 0 8px currentColor; transform: scale(1); }
-      50% { opacity: 0.6; box-shadow: 0 0 4px currentColor; transform: scale(0.9); }
     }
 
     .header-actions {
@@ -141,433 +86,213 @@
     }
 
     .clear-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 9px 16px;
-      background: linear-gradient(145deg, var(--bg-card) 0%, #111111 100%);
+      padding: 8px 14px;
+      background: var(--bg-card);
       border: 1px solid var(--border-default);
-      border-radius: 22px;
+      border-radius: 20px;
       font-family: inherit;
       font-size: 12px;
       font-weight: 600;
       color: var(--text-secondary);
       cursor: pointer;
-      box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.03);
       -webkit-tap-highlight-color: transparent;
-      transition: all 0.2s ease;
     }
 
     .clear-btn:active {
       background: var(--bg-card-hover);
       transform: scale(0.95);
-      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+
+    .conn-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      background: var(--bg-card);
+      border: 1px solid var(--border-default);
+      color: var(--text-muted);
+    }
+
+    .conn-badge.online {
+      background: var(--status-running-bg);
+      border-color: var(--status-running-border);
+      color: var(--status-running);
+    }
+
+    .conn-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .conn-badge.online .conn-dot {
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.85); }
     }
 
     /* Session List */
     .sessions {
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 16px;
     }
 
-    /* Session Card */
+    /* Session Card - Tappable */
     .card {
       background: var(--bg-card);
       border-radius: var(--radius-md);
-      border: 1px solid var(--border-subtle);
+      border: 2px solid var(--border-subtle);
       overflow: hidden;
-      box-shadow: var(--shadow-card);
-      transition: all 0.25s ease;
+      box-shadow: var(--shadow-md);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
 
     .card:active {
-      background: var(--bg-card-hover);
-      transform: scale(0.99);
-      box-shadow: var(--shadow-sm);
+      transform: scale(0.98);
     }
 
     .card.running {
-      border-color: rgba(34, 197, 94, 0.15);
-      box-shadow: var(--shadow-card), 0 0 20px rgba(34, 197, 94, 0.08);
+      border-color: var(--status-running-border);
+      box-shadow: var(--shadow-md), 0 0 20px rgba(34, 197, 94, 0.1);
     }
 
     .card.waiting_input {
-      border-color: rgba(245, 158, 11, 0.15);
-      box-shadow: var(--shadow-card), 0 0 20px rgba(245, 158, 11, 0.08);
+      border-color: var(--status-waiting-border);
+      box-shadow: var(--shadow-md), 0 0 20px rgba(245, 158, 11, 0.1);
     }
 
     .card.stopped {
-      border-color: var(--border-subtle);
-      opacity: 0.85;
+      border-color: var(--status-stopped-border);
+      opacity: 0.75;
     }
 
-    /* Status Indicator - Top accent bar */
-    .card-accent {
-      height: 3px;
-      background: currentColor;
-    }
-
-    .card.running .card-accent {
-      background: var(--status-running);
-      box-shadow: 0 0 8px var(--status-running-glow);
-    }
-
-    .card.waiting_input .card-accent {
-      background: var(--status-waiting);
-      box-shadow: 0 0 8px var(--status-waiting-glow);
-    }
-
-    .card.stopped .card-accent {
-      background: var(--status-stopped);
-    }
-
-
-    .card-content {
-      padding: 16px 18px;
-      position: relative;
-    }
-
-    .card-status-label {
-      position: absolute;
-      top: 16px;
-      right: 18px;
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.3px;
-      text-transform: uppercase;
-      color: var(--text-muted);
-    }
-
-    .card.running .card-status-label { color: var(--status-running); text-shadow: 0 0 8px var(--status-running-glow); }
-    .card.waiting_input .card-status-label { color: var(--status-waiting); text-shadow: 0 0 8px var(--status-waiting-glow); }
-    .card.stopped .card-status-label { color: var(--status-stopped); }
-
-    /* Card Header: Status + Directory */
-    .card-header {
-      display: flex;
-      align-items: flex-start;
-      gap: 14px;
-      margin-bottom: 14px;
-    }
-
-    /* Large Status Icon */
-    .status-icon {
-      flex-shrink: 0;
-      width: 48px;
-      height: 48px;
-      border-radius: var(--radius-sm);
+    /* Status Header */
+    .card-status {
       display: flex;
       align-items: center;
-      justify-content: center;
-      font-size: 22px;
-      border: 1px solid transparent;
-      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
-      transition: all 0.25s ease;
+      gap: 10px;
+      padding: 12px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
-    .card.running .status-icon {
-      background: linear-gradient(145deg, var(--status-running-bg) 0%, rgba(34, 197, 94, 0.08) 100%);
-      border-color: rgba(34, 197, 94, 0.15);
+    .card-status-chevron {
+      margin-left: auto;
+      font-size: 18px;
+      opacity: 0.7;
+    }
+
+    .card.running .card-status {
+      background: var(--status-running-bg);
       color: var(--status-running);
-      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.15), 0 0 12px var(--status-running-glow);
     }
 
-    .card.waiting_input .status-icon {
-      background: linear-gradient(145deg, var(--status-waiting-bg) 0%, rgba(245, 158, 11, 0.08) 100%);
-      border-color: rgba(245, 158, 11, 0.15);
+    .card.waiting_input .card-status {
+      background: var(--status-waiting-bg);
       color: var(--status-waiting);
-      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.15), 0 0 12px var(--status-waiting-glow);
     }
 
-    .card.stopped .status-icon {
-      background: linear-gradient(145deg, var(--status-stopped-bg) 0%, rgba(113, 113, 122, 0.06) 100%);
-      border-color: rgba(113, 113, 122, 0.1);
+    .card.stopped .card-status {
+      background: var(--status-stopped-bg);
       color: var(--status-stopped);
     }
 
-
-    .card-info {
-      flex: 1;
-      min-width: 0;
+    .card-status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: currentColor;
     }
 
-    .card-dir {
-      font-size: 17px;
+    .card.running .card-status-dot {
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    .card.waiting_input .card-status-dot {
+      animation: pulse 1s ease-in-out infinite;
+    }
+
+    /* Card Body */
+    .card-body {
+      padding: 16px;
+    }
+
+    .card-name {
+      font-size: 20px;
       font-weight: 700;
       color: var(--text-primary);
-      margin-bottom: 3px;
-      word-break: break-word;
-      letter-spacing: -0.2px;
+      margin-bottom: 4px;
+      letter-spacing: -0.3px;
     }
 
     .card-path {
       font-size: 13px;
       color: var(--text-muted);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      font-weight: 500;
+      margin-bottom: 14px;
+      word-break: break-all;
     }
 
     /* Message Preview */
-    .card-msg {
-      margin-top: 14px;
-      padding: 12px 14px;
-      background: var(--bg-input);
-      border: 1px solid var(--border-subtle);
+    .card-message {
+      background: #1e1e1e;
+      border: 1px solid #3a3a3a;
       border-radius: var(--radius-sm);
-      cursor: pointer;
-      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.15);
-      -webkit-tap-highlight-color: transparent;
-      transition: all 0.2s ease;
+      padding: 12px 14px;
     }
 
-    .card-msg:active {
-      background: var(--bg-card-hover);
-    }
-
-    .card-msg-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .card-msg-text {
-      flex: 1;
-      font-size: 13px;
-      color: var(--text-secondary);
-      line-height: 1.4;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      font-weight: 500;
-    }
-
-    .card-msg-toggle {
-      flex-shrink: 0;
-      width: 26px;
-      height: 26px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--text-muted);
-      font-size: 10px;
-      background: var(--bg-card);
-      border-radius: 50%;
-      transition: all 0.25s ease;
-    }
-
-    .card-msg.open .card-msg-toggle {
-      transform: rotate(180deg);
-      background: var(--accent);
-      color: white;
-    }
-
-    .card-msg-full {
-      display: none;
-      margin-top: 14px;
-      padding-top: 14px;
-      border-top: 1px solid var(--border-subtle);
+    .card-message-text {
       font-size: 14px;
       color: var(--text-primary);
-      line-height: 1.7;
-      overflow-x: auto;
-    }
-
-    .card-msg.open .card-msg-text { display: none; }
-    .card-msg.open .card-msg-full { display: block; }
-
-    .card-msg-full > *:first-child { margin-top: 0; }
-    .card-msg-full > *:last-child { margin-bottom: 0; }
-
-    .card-msg-full p {
-      margin: 0 0 14px 0;
-    }
-    .card-msg-full h1, .card-msg-full h2, .card-msg-full h3,
-    .card-msg-full h4, .card-msg-full h5, .card-msg-full h6 {
-      margin: 20px 0 12px 0;
-      font-weight: 600;
-      line-height: 1.3;
-    }
-    .card-msg-full h1 { font-size: 18px; }
-    .card-msg-full h2 { font-size: 16px; }
-    .card-msg-full h3 { font-size: 15px; }
-    .card-msg-full code {
-      background: var(--bg-primary);
-      padding: 3px 7px;
-      border-radius: 4px;
-      font-size: 13px;
-      font-family: 'SF Mono', Menlo, monospace;
-    }
-    .card-msg-full pre {
-      background: var(--bg-primary);
-      padding: 14px 16px;
-      border-radius: var(--radius-sm);
-      overflow-x: auto;
-      margin: 16px 0;
-      font-size: 13px;
-      font-family: 'SF Mono', Menlo, monospace;
       line-height: 1.5;
-    }
-    .card-msg-full pre code {
-      background: none;
-      padding: 0;
-    }
-    .card-msg-full ul, .card-msg-full ol {
-      margin: 14px 0;
-      padding-left: 24px;
-    }
-    .card-msg-full li {
-      margin: 8px 0;
-    }
-    .card-msg-full li > ul, .card-msg-full li > ol {
-      margin: 6px 0;
-    }
-    .card-msg-full blockquote {
-      margin: 14px 0;
-      padding: 10px 16px;
-      border-left: 3px solid var(--accent);
-      background: var(--bg-primary);
-      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-      color: var(--text-secondary);
-    }
-    .card-msg-full blockquote p {
-      margin: 0;
-    }
-    .card-msg-full hr {
-      border: none;
-      border-top: 1px solid var(--border-default);
-      margin: 18px 0;
-    }
-    .card-msg-full hr + * {
-      margin-top: 18px !important;
-    }
-    .card-msg-full a {
-      color: var(--accent-hover);
-      text-decoration: none;
-    }
-    .card-msg-full strong {
-      font-weight: 600;
-      color: var(--text-primary);
-    }
-    .card-msg-full table {
-      width: max-content;
-      min-width: 100%;
-      border-collapse: collapse;
-      margin: 14px 0;
-      font-size: 13px;
-    }
-    .card-msg-full th, .card-msg-full td {
-      padding: 8px 12px;
-      border: 1px solid var(--border-default);
-      text-align: left;
-      white-space: nowrap;
-    }
-    .card-msg-full th {
-      background: var(--bg-primary);
-      font-weight: 600;
-    }
-
-    /* Action Buttons */
-    .card-actions {
-      display: flex;
-      gap: 10px;
-      margin-top: 16px;
-    }
-
-    .btn {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 14px 16px;
-      border: none;
-      border-radius: var(--radius-sm);
-      font-family: inherit;
-      font-size: 13px;
-      font-weight: 700;
-      letter-spacing: 0.1px;
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
-      transition: all 0.2s ease;
-      position: relative;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
       overflow: hidden;
     }
 
-    .btn::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    .card-message-empty {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-style: italic;
     }
 
-    .btn-primary {
-      background: linear-gradient(165deg, var(--accent) 0%, #4f46e5 100%);
-      color: white;
-      box-shadow: var(--shadow-md), 0 0 20px var(--accent-glow), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(99, 102, 241, 0.4);
-    }
-
-    .btn-primary:active {
-      background: linear-gradient(165deg, #4f46e5 0%, #4338ca 100%);
-      transform: scale(0.97);
-      box-shadow: var(--shadow-sm), 0 0 10px var(--accent-glow);
-    }
-
-    .btn-secondary {
-      background: linear-gradient(165deg, var(--bg-input) 0%, #161616 100%);
-      color: var(--text-primary);
-      border: 1px solid var(--border-default);
-      box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.03);
-    }
-
-    .btn-secondary:active {
-      background: var(--bg-card-hover);
-      transform: scale(0.97);
-      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
-    }
 
     /* Empty State */
     .empty {
       text-align: center;
-      padding: 56px 28px;
+      padding: 60px 24px;
       background: var(--bg-card);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-md);
-      box-shadow: var(--shadow-card);
     }
 
     .empty-icon {
-      width: 64px;
-      height: 64px;
-      margin: 0 auto 20px;
-      background: linear-gradient(145deg, var(--bg-input) 0%, var(--bg-card) 100%);
-      border: 1px solid var(--border-subtle);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 28px;
-      color: var(--text-muted);
-      box-shadow: var(--shadow-sm), inset 0 1px 2px rgba(0, 0, 0, 0.15);
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
     }
 
     .empty-title {
-      font-size: 17px;
+      font-size: 18px;
       font-weight: 700;
       margin-bottom: 8px;
-      letter-spacing: -0.2px;
     }
 
     .empty-text {
       font-size: 14px;
       color: var(--text-secondary);
-      line-height: 1.5;
-      font-weight: 500;
     }
 
     /* Loading */
@@ -576,11 +301,10 @@
       flex-direction: column;
       align-items: center;
       gap: 16px;
-      padding: 56px 28px;
+      padding: 60px 24px;
       background: var(--bg-card);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-md);
-      box-shadow: var(--shadow-card);
     }
 
     .loading-spinner {
@@ -590,7 +314,6 @@
       border-top-color: var(--accent);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
-      box-shadow: 0 0 12px var(--accent-glow);
     }
 
     @keyframes spin {
@@ -600,7 +323,6 @@
     .loading-text {
       font-size: 14px;
       color: var(--text-secondary);
-      font-weight: 500;
     }
 
     /* Toast */
@@ -615,7 +337,6 @@
       color: var(--text-primary);
       padding: 14px 24px;
       border-radius: var(--radius-lg);
-      border: 1px solid var(--border-subtle);
       font-size: 14px;
       font-weight: 600;
       box-shadow: var(--shadow-lg);
@@ -630,28 +351,20 @@
     }
 
     .toast.ok {
-      background: rgba(34, 197, 94, 0.92);
-      border-color: rgba(34, 197, 94, 0.3);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      background: rgba(34, 197, 94, 0.95);
       color: white;
-      box-shadow: var(--shadow-lg), 0 0 20px rgba(34, 197, 94, 0.3);
     }
 
     .toast.err {
-      background: rgba(239, 68, 68, 0.92);
-      border-color: rgba(239, 68, 68, 0.3);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      background: rgba(239, 68, 68, 0.95);
       color: white;
-      box-shadow: var(--shadow-lg), 0 0 20px rgba(239, 68, 68, 0.3);
     }
 
-    /* Modal / Bottom Sheet */
+    /* Modal - 80% height */
     .modal-bg {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.75);
+      background: rgba(0, 0, 0, 0.8);
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
       display: flex;
@@ -675,9 +388,13 @@
       border-radius: var(--radius-lg) var(--radius-lg) 0 0;
       width: 100%;
       max-width: 480px;
+      height: 80vh;
+      height: 80dvh;
       transform: translateY(100%);
       transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
-      box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
     }
 
     .modal-bg.show .modal {
@@ -690,24 +407,69 @@
       background: var(--border-default);
       border-radius: 3px;
       margin: 12px auto;
+      flex-shrink: 0;
     }
 
     .modal-header {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      padding: 8px 20px 18px;
+      padding: 8px 20px 16px;
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--border-subtle);
+      gap: 12px;
+    }
+
+    .modal-header-info {
+      flex: 1;
+      min-width: 0;
     }
 
     .modal-header h2 {
       font-size: 18px;
       font-weight: 700;
-      letter-spacing: -0.3px;
+      margin-bottom: 2px;
+    }
+
+    .modal-header-path {
+      font-size: 13px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .modal-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .modal-focus-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 16px;
+      background: linear-gradient(135deg, var(--accent) 0%, #4f46e5 100%);
+      border: none;
+      border-radius: 20px;
+      color: white;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 12px var(--accent-glow);
+      transition: all 0.15s ease;
+    }
+
+    .modal-focus-btn:active {
+      transform: scale(0.95);
     }
 
     .modal-close {
-      width: 34px;
-      height: 34px;
+      width: 36px;
+      height: 36px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -715,10 +477,8 @@
       border: 1px solid var(--border-subtle);
       border-radius: 50%;
       color: var(--text-secondary);
-      font-size: 18px;
+      font-size: 20px;
       cursor: pointer;
-      box-shadow: var(--shadow-sm);
-      transition: all 0.2s ease;
     }
 
     .modal-close:active {
@@ -726,43 +486,172 @@
       transform: scale(0.95);
     }
 
-    .modal-body {
-      padding: 0 20px 18px;
+    /* Message Section */
+    .modal-message {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      padding: 16px 20px;
+      overflow: hidden;
     }
 
-    .modal-body textarea {
+    .modal-message-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+      flex-shrink: 0;
+    }
+
+    .modal-message-content {
+      flex: 0 1 auto;
+      max-height: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      font-size: 15px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+    }
+
+    .modal-message-content::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .modal-message-content::-webkit-scrollbar-thumb {
+      background: var(--border-default);
+      border-radius: 3px;
+    }
+
+    .modal-message-content p { margin: 0 0 14px; }
+    .modal-message-content p:last-child { margin-bottom: 0; }
+    .modal-message-content code {
+      background: var(--bg-primary);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: 'SF Mono', Menlo, monospace;
+    }
+    .modal-message-content pre {
+      background: var(--bg-primary);
+      padding: 14px;
+      border-radius: var(--radius-sm);
+      overflow-x: auto;
+      margin: 14px 0;
+      font-size: 13px;
+      font-family: 'SF Mono', Menlo, monospace;
+      line-height: 1.5;
+    }
+    .modal-message-content pre code {
+      background: none;
+      padding: 0;
+    }
+    .modal-message-content ul, .modal-message-content ol {
+      margin: 14px 0;
+      padding-left: 24px;
+      list-style-position: inside;
+    }
+    .modal-message-content li {
+      margin: 8px 0;
+      text-indent: -4px;
+    }
+    .modal-message-content h1, .modal-message-content h2, .modal-message-content h3 {
+      margin: 18px 0 12px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .modal-message-content h1 { font-size: 20px; }
+    .modal-message-content h2 { font-size: 18px; }
+    .modal-message-content h3 { font-size: 16px; }
+    .modal-message-content blockquote {
+      margin: 14px 0;
+      padding: 12px 16px;
+      border-left: 3px solid var(--accent);
+      background: var(--bg-primary);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    }
+    .modal-message-content a {
+      color: var(--accent-hover);
+      text-decoration: none;
+    }
+    .modal-message-content table {
       width: 100%;
-      height: 130px;
+      border-collapse: collapse;
+      margin: 14px 0;
+      font-size: 14px;
+    }
+    .modal-message-content th, .modal-message-content td {
+      padding: 10px 12px;
+      border: 1px solid var(--border-default);
+      text-align: left;
+    }
+    .modal-message-content th {
+      background: var(--bg-primary);
+      font-weight: 600;
+    }
+
+    .modal-message-empty {
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* Input Section */
+    .modal-input {
+      flex-shrink: 0;
+      padding: 16px 20px;
+      padding-bottom: calc(env(safe-area-inset-bottom, 0) + 16px);
+      border-top: 1px solid var(--border-subtle);
+      background: var(--bg-card);
+    }
+
+    .modal-input-row {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .modal-input-field {
+      flex: 1;
+    }
+
+    .modal-input textarea {
+      width: 100%;
+      height: 48px;
+      max-height: 120px;
       background: var(--bg-input);
       border: 1px solid var(--border-default);
       border-radius: var(--radius-sm);
       color: var(--text-primary);
       font-family: inherit;
       font-size: 15px;
-      font-weight: 500;
-      padding: 14px;
+      padding: 12px 14px;
       resize: none;
-      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.15);
       transition: all 0.2s ease;
     }
 
-    .modal-body textarea::placeholder {
+    .modal-input textarea::placeholder {
       color: var(--text-muted);
     }
 
-    .modal-body textarea:focus {
+    .modal-input textarea:focus {
       outline: none;
       border-color: var(--accent);
-      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.15), 0 0 0 3px var(--accent-glow);
+      box-shadow: 0 0 0 3px var(--accent-glow);
     }
 
     .modal-warn {
-      margin-top: 14px;
-      padding: 12px 14px;
-      background: rgba(239, 68, 68, 0.12);
-      border: 1px solid rgba(239, 68, 68, 0.2);
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
       border-radius: var(--radius-sm);
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 600;
       color: var(--danger);
       display: none;
@@ -771,74 +660,33 @@
     .modal-warn.show {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
     }
 
-    .modal-footer {
-      display: flex;
-      gap: 12px;
-      padding: 18px 20px;
-      padding-bottom: calc(env(safe-area-inset-bottom, 0) + 18px);
-      border-top: 1px solid var(--border-subtle);
-    }
-
-    .modal-btn {
-      flex: 1;
+    .modal-send-btn {
+      width: 48px;
+      height: 48px;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 15px;
+      background: linear-gradient(135deg, var(--accent) 0%, #4f46e5 100%);
       border: none;
       border-radius: var(--radius-sm);
-      font-family: inherit;
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .modal-btn::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
-    }
-
-    .modal-btn.cancel {
-      background: linear-gradient(165deg, var(--bg-input) 0%, #161616 100%);
-      color: var(--text-primary);
-      border: 1px solid var(--border-default);
-      box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.03);
-    }
-
-    .modal-btn.cancel:active {
-      background: var(--bg-card-hover);
-      transform: scale(0.97);
-      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
-    }
-
-    .modal-btn.send {
-      background: linear-gradient(165deg, var(--accent) 0%, #4f46e5 100%);
       color: white;
-      border: 1px solid rgba(99, 102, 241, 0.4);
-      box-shadow: var(--shadow-md), 0 0 20px var(--accent-glow), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      font-size: 20px;
+      cursor: pointer;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px var(--accent-glow);
+      transition: all 0.2s ease;
     }
 
-    .modal-btn.send:active {
-      background: linear-gradient(165deg, #4f46e5 0%, #4338ca 100%);
-      transform: scale(0.97);
-      box-shadow: var(--shadow-sm), 0 0 10px var(--accent-glow);
+    .modal-send-btn:active {
+      transform: scale(0.95);
     }
 
-    .modal-btn.send:disabled {
+    .modal-send-btn:disabled {
       background: var(--bg-input);
       color: var(--text-muted);
-      border-color: var(--border-subtle);
       box-shadow: none;
     }
 
@@ -855,33 +703,28 @@
     }
 
     .desktop-warning-icon {
-      font-size: 72px;
-      margin-bottom: 28px;
-      filter: drop-shadow(0 4px 12px rgba(99, 102, 241, 0.3));
+      font-size: 64px;
+      margin-bottom: 24px;
     }
 
     .desktop-warning-title {
-      font-size: 28px;
+      font-size: 24px;
       font-weight: 700;
-      margin-bottom: 14px;
-      letter-spacing: -0.5px;
+      margin-bottom: 12px;
     }
 
     .desktop-warning-text {
-      font-size: 16px;
+      font-size: 15px;
       color: var(--text-secondary);
-      line-height: 1.7;
-      font-weight: 500;
+      line-height: 1.6;
     }
 
     .desktop-qr {
-      margin-top: 36px;
+      margin-top: 32px;
       border-radius: var(--radius-md);
       box-shadow: var(--shadow-lg);
-      border: 1px solid var(--border-subtle);
     }
 
-    /* Show desktop warning only on non-touch devices with large screens */
     @media (min-width: 1025px) and (pointer: fine) {
       .app, .toast, .modal-bg {
         display: none !important;
@@ -897,20 +740,20 @@
     <div class="desktop-warning-icon">📱</div>
     <h1 class="desktop-warning-title">Mobile Only</h1>
     <p class="desktop-warning-text">
-      This interface is designed for smartphones and tablets only.<br>
-      Scan the QR code below to access from your mobile device.
+      This interface is designed for mobile devices.<br>
+      Scan the QR code to access from your phone.
     </p>
     <img id="qrcode" class="desktop-qr" alt="QR Code">
   </div>
 
   <div class="app">
     <header class="header">
-      <h1 class="header-title">Claude Code Monitor</h1>
+      <h1 class="header-title">Claude Monitor</h1>
       <div class="header-actions">
         <button class="clear-btn" onclick="clearAllSessions()">Clear</button>
         <div class="conn-badge" id="connStatus">
           <span class="conn-dot"></span>
-          <span id="connText">Connecting</span>
+          <span id="connText">Offline</span>
         </div>
       </div>
     </header>
@@ -929,19 +772,34 @@
     <div class="modal">
       <div class="modal-handle"></div>
       <div class="modal-header">
-        <h2>Send Message</h2>
-        <button class="modal-close" onclick="closeModal()">&times;</button>
-      </div>
-      <div class="modal-body">
-        <textarea id="msgInput" placeholder="Type your message..."></textarea>
-        <div class="modal-warn" id="warn">
-          <span>⚠️</span>
-          <span>This looks like a dangerous command</span>
+        <div class="modal-header-info">
+          <h2 id="modalTitle">Project Name</h2>
+          <div class="modal-header-path" id="modalPath">~/path/to/project</div>
+        </div>
+        <div class="modal-header-actions">
+          <button class="modal-focus-btn" id="modalFocusBtn" onclick="focusFromModal()">
+            💻 Focus
+          </button>
+          <button class="modal-close" onclick="closeModal()">&times;</button>
         </div>
       </div>
-      <div class="modal-footer">
-        <button class="modal-btn cancel" onclick="closeModal()">Cancel</button>
-        <button class="modal-btn send" id="sendBtn" onclick="sendMsg()">Send</button>
+      <div class="modal-message">
+        <div class="modal-message-label">Message</div>
+        <div class="modal-message-content" id="modalMessage">
+          <span class="modal-message-empty">No messages yet</span>
+        </div>
+      </div>
+      <div class="modal-input">
+        <div class="modal-input-row">
+          <div class="modal-input-field">
+            <textarea id="msgInput" placeholder="Send a message..." rows="1"></textarea>
+            <div class="modal-warn" id="warn">
+              <span>!</span>
+              <span>Dangerous command detected</span>
+            </div>
+          </div>
+          <button class="modal-send-btn" id="sendBtn" onclick="sendMsg()" disabled>↑</button>
+        </div>
       </div>
     </div>
   </div>
@@ -952,26 +810,27 @@
     const $connText = document.getElementById('connText');
     const $toast = document.getElementById('toast');
     const $modal = document.getElementById('modal');
+    const $modalTitle = document.getElementById('modalTitle');
+    const $modalPath = document.getElementById('modalPath');
+    const $modalMessage = document.getElementById('modalMessage');
     const $msgInput = document.getElementById('msgInput');
     const $sendBtn = document.getElementById('sendBtn');
     const $warn = document.getElementById('warn');
 
-    // Timing constants
     const TOAST_DURATION_MS = 2500;
     const RECONNECT_DELAY_MS = 2000;
     const SEND_TIMEOUT_MS = 5000;
-    const MODAL_FOCUS_DELAY_MS = 150;
     const SWIPE_THRESHOLD_PX = 100;
 
     let ws = null;
     let targetSession = null;
-    let openMsgs = new Set();
     let pendingSend = null;
+    let sessionsData = [];
 
     const STATUS = {
-      running: { label: 'Running', icon: '🏃' },
-      waiting_input: { label: 'Waiting', icon: '⏸' },
-      stopped: { label: 'Done', icon: '✓' }
+      running: 'Running',
+      waiting_input: 'Waiting for Input',
+      stopped: 'Stopped'
     };
 
     const DANGER = [
@@ -1006,18 +865,18 @@
       return path.replace(/^\/Users\/[^/]+/, '~');
     }
 
-    function truncate(text, maxLen = 50) {
+    function truncateMessage(text, maxLen = 100) {
       if (!text) return '';
-      const cleanedText = text.replace(/[#*`_~\[\]]/g, '').replace(/\s+/g, ' ').trim();
-      if (cleanedText.length <= maxLen) return cleanedText;
-      return cleanedText.slice(0, maxLen) + '...';
+      const clean = text.replace(/[#*`_~\[\]]/g, '').replace(/\s+/g, ' ').trim();
+      if (clean.length <= maxLen) return clean;
+      return clean.slice(0, maxLen) + '...';
     }
 
     function renderMarkdown(markdownText) {
+      if (!markdownText) return '<span class="modal-message-empty">No messages yet</span>';
       if (typeof marked !== 'undefined') {
         marked.setOptions({ breaks: true, gfm: true });
         const html = marked.parse(markdownText);
-        // Sanitize HTML to prevent XSS attacks
         if (typeof DOMPurify !== 'undefined') {
           return DOMPurify.sanitize(html);
         }
@@ -1028,27 +887,23 @@
       return container.innerHTML;
     }
 
-    function toggleMsg(id, e) {
-      e.stopPropagation();
-      const el = document.querySelector(`[data-msg="${id}"]`);
-      if (!el) return;
-      if (openMsgs.has(id)) {
-        openMsgs.delete(id);
-        el.classList.remove('open');
-      } else {
-        openMsgs.add(id);
-        el.classList.add('open');
-      }
+    function getSessionById(id) {
+      return sessionsData.find(s => s.session_id === id);
     }
 
-    function openModal(id, e) {
-      e.stopPropagation();
+    function openModal(id) {
+      const session = getSessionById(id);
+      if (!session) return;
+
       targetSession = id;
+      $modalTitle.textContent = getDirName(session.cwd);
+      $modalPath.textContent = formatPath(session.cwd);
+      $modalMessage.innerHTML = renderMarkdown(session.lastMessage);
       $msgInput.value = '';
       $warn.classList.remove('show');
       $sendBtn.disabled = true;
       $modal.classList.add('show');
-      setTimeout(() => $msgInput.focus(), MODAL_FOCUS_DELAY_MS);
+      setTimeout(() => $msgInput.focus(), 150);
     }
 
     function closeModal() {
@@ -1057,8 +912,8 @@
     }
 
     function sendMsg() {
-      const messageText = $msgInput.value.trim();
-      if (!messageText || !targetSession) return;
+      const text = $msgInput.value.trim();
+      if (!text || !targetSession) return;
       if (!ws || ws.readyState !== 1) {
         toast('Not connected', 'err');
         return;
@@ -1067,25 +922,22 @@
 
       pendingSend = targetSession;
       $sendBtn.disabled = true;
-      $sendBtn.textContent = 'Sending...';
 
-      ws.send(JSON.stringify({ type: 'sendText', sessionId: targetSession, text: messageText }));
+      ws.send(JSON.stringify({ type: 'sendText', sessionId: targetSession, text }));
 
       setTimeout(() => {
         if (pendingSend) {
           pendingSend = null;
-          $sendBtn.disabled = false;
-          $sendBtn.textContent = 'Send';
+          $sendBtn.disabled = !$msgInput.value.trim();
           toast('Send timeout', 'err');
-          closeModal();
         }
       }, SEND_TIMEOUT_MS);
     }
 
-    function focusTerminal(id, e) {
-      e.stopPropagation();
+    function focusFromModal() {
+      if (!targetSession) return;
       if (!ws || ws.readyState !== 1) return toast('Not connected', 'err');
-      ws.send(JSON.stringify({ type: 'focus', sessionId: id }));
+      ws.send(JSON.stringify({ type: 'focus', sessionId: targetSession }));
       toast('Focusing...');
     }
 
@@ -1096,13 +948,15 @@
     }
 
     $msgInput.addEventListener('input', () => {
-      const inputText = $msgInput.value.trim();
-      $sendBtn.disabled = !inputText;
-      $warn.classList.toggle('show', DANGER.some(pattern => pattern.test(inputText)));
+      const text = $msgInput.value.trim();
+      $sendBtn.disabled = !text;
+      $warn.classList.toggle('show', DANGER.some(p => p.test(text)));
+      $msgInput.style.height = '48px';
+      $msgInput.style.height = Math.min($msgInput.scrollHeight, 120) + 'px';
     });
 
     $msgInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !$sendBtn.disabled) {
+      if (e.key === 'Enter' && !e.shiftKey && !$sendBtn.disabled) {
         e.preventDefault();
         sendMsg();
       }
@@ -1113,33 +967,49 @@
       if (e.target === $modal) closeModal();
     });
 
-    // Swipe to close modal
+    // Swipe to close
     let touchStartY = 0, currentTouchY = 0, isDragging = false;
-    const SWIPE_START_ZONE_PX = 50;
     const $modalContent = $modal.querySelector('.modal');
-    $modalContent.addEventListener('touchstart', (e) => {
-      const rect = $modalContent.getBoundingClientRect();
-      if (e.touches[0].clientY - rect.top < SWIPE_START_ZONE_PX) {
-        touchStartY = currentTouchY = e.touches[0].clientY;
-        isDragging = true;
-        $modalContent.style.transition = 'none';
-      }
-    }, { passive: true });
-    $modalContent.addEventListener('touchmove', (e) => {
+    const $modalHandle = $modal.querySelector('.modal-handle');
+    const $modalHeader = $modal.querySelector('.modal-header');
+
+    function handleSwipeStart(e) {
+      touchStartY = currentTouchY = e.touches[0].clientY;
+      isDragging = true;
+      $modalContent.style.transition = 'none';
+    }
+
+    function handleSwipeMove(e) {
       if (!isDragging) return;
       currentTouchY = e.touches[0].clientY;
-      const dragDistance = currentTouchY - touchStartY;
-      if (dragDistance > 0) $modalContent.style.transform = `translateY(${dragDistance}px)`;
-    }, { passive: true });
-    $modalContent.addEventListener('touchend', () => {
+      const d = currentTouchY - touchStartY;
+      if (d > 0) {
+        $modalContent.style.transform = `translateY(${d}px)`;
+      }
+    }
+
+    function handleSwipeEnd() {
       if (!isDragging) return;
       isDragging = false;
-      $modalContent.style.transition = '';
-      if (currentTouchY - touchStartY > SWIPE_THRESHOLD_PX) closeModal();
+      $modalContent.style.transition = 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
+      const swipeDistance = currentTouchY - touchStartY;
+      if (swipeDistance > SWIPE_THRESHOLD_PX) {
+        closeModal();
+      }
       $modalContent.style.transform = '';
-    });
+    }
+
+    // Enable swipe on handle and header area
+    $modalHandle.addEventListener('touchstart', handleSwipeStart, { passive: true });
+    $modalHandle.addEventListener('touchmove', handleSwipeMove, { passive: true });
+    $modalHandle.addEventListener('touchend', handleSwipeEnd);
+    $modalHeader.addEventListener('touchstart', handleSwipeStart, { passive: true });
+    $modalHeader.addEventListener('touchmove', handleSwipeMove, { passive: true });
+    $modalHeader.addEventListener('touchend', handleSwipeEnd);
 
     function render(list) {
+      sessionsData = list || [];
+
       if (!list || !list.length) {
         $sessions.innerHTML = `
           <div class="empty">
@@ -1151,35 +1021,26 @@
       }
 
       $sessions.innerHTML = list.map(session => {
-        const isOpen = openMsgs.has(session.session_id);
         const dirName = getDirName(session.cwd);
-        const fullPath = formatPath(session.cwd);
-        const statusInfo = STATUS[session.status];
+        const shortPath = formatPath(session.cwd);
+        const statusLabel = STATUS[session.status];
+        const msgPreview = truncateMessage(session.lastMessage);
 
         return `
-          <div class="card ${session.status}">
-            <div class="card-accent"></div>
-            <div class="card-content">
-              <span class="card-status-label">${statusInfo.label}</span>
-              <div class="card-header">
-                <div class="status-icon">${statusInfo.icon}</div>
-                <div class="card-info">
-                  <div class="card-dir">${dirName}</div>
-                  <div class="card-path">${fullPath}</div>
-                </div>
-              </div>
-              ${session.lastMessage ? `
-              <div class="card-msg ${isOpen ? 'open' : ''}" data-msg="${session.session_id}" onclick="toggleMsg('${session.session_id}', event)">
-                <div class="card-msg-row">
-                  <span class="card-msg-text">${truncate(session.lastMessage)}</span>
-                  <span class="card-msg-toggle">▼</span>
-                </div>
-                <div class="card-msg-full">${renderMarkdown(session.lastMessage)}</div>
-              </div>
-              ` : ''}
-              <div class="card-actions">
-                <button class="btn btn-secondary" onclick="focusTerminal('${session.session_id}', event)">Focus</button>
-                <button class="btn btn-primary" onclick="openModal('${session.session_id}', event)">Send</button>
+          <div class="card ${session.status}" onclick="openModal('${session.session_id}')">
+            <div class="card-status">
+              <span class="card-status-dot"></span>
+              <span>${statusLabel}</span>
+              <span class="card-status-chevron">›</span>
+            </div>
+            <div class="card-body">
+              <div class="card-name">${dirName}</div>
+              <div class="card-path">${shortPath}</div>
+              <div class="card-message">
+                ${msgPreview
+                  ? `<div class="card-message-text">${msgPreview}</div>`
+                  : `<div class="card-message-empty">No messages yet</div>`
+                }
               </div>
             </div>
           </div>`;
@@ -1195,7 +1056,7 @@
           <div class="empty">
             <div class="empty-icon">🔒</div>
             <div class="empty-title">Unauthorized</div>
-            <div class="empty-text">Invalid or missing access token. Please scan the QR code from the terminal.</div>
+            <div class="empty-text">Please scan the QR code from the terminal</div>
           </div>`;
         setConn(false);
         return;
@@ -1212,19 +1073,22 @@
       ws.onerror = () => setConn(false);
       ws.onmessage = (event) => {
         try {
-          const message = JSON.parse(event.data);
-          if (message.type === 'sessions') {
-            render(message.data);
-          } else if (message.type === 'focusResult') {
-            toast(message.success ? 'Focused!' : 'Failed to focus', message.success ? 'ok' : 'err');
-          } else if (message.type === 'sendTextResult') {
+          const msg = JSON.parse(event.data);
+          if (msg.type === 'sessions') {
+            render(msg.data);
+          } else if (msg.type === 'focusResult') {
+            toast(msg.success ? 'Focused!' : 'Failed', msg.success ? 'ok' : 'err');
+          } else if (msg.type === 'sendTextResult') {
             pendingSend = null;
-            $sendBtn.disabled = false;
-            $sendBtn.textContent = 'Send';
-            toast(message.success ? 'Sent!' : (message.error || 'Failed'), message.success ? 'ok' : 'err');
-            if (message.success) closeModal();
-          } else if (message.type === 'clearSessionsResult') {
-            toast(message.success ? 'Cleared!' : (message.error || 'Failed'), message.success ? 'ok' : 'err');
+            $sendBtn.disabled = !$msgInput.value.trim();
+            toast(msg.success ? 'Sent!' : (msg.error || 'Failed'), msg.success ? 'ok' : 'err');
+            if (msg.success) {
+              $msgInput.value = '';
+              $msgInput.style.height = '48px';
+              $sendBtn.disabled = true;
+            }
+          } else if (msg.type === 'clearSessionsResult') {
+            toast(msg.success ? 'Cleared!' : (msg.error || 'Failed'), msg.success ? 'ok' : 'err');
           }
         } catch {}
       };
@@ -1232,18 +1096,16 @@
 
     connect();
 
-    // Generate QR code for desktop warning using Google Charts API
-    (function generateQRCode() {
+    // QR code for desktop
+    (function() {
       const qrImg = document.getElementById('qrcode');
-      const currentUrl = window.location.href;
-
       if (qrImg) {
-        const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(currentUrl)}&bgcolor=1a1a1a&color=ffffff`;
-        qrImg.src = qrApiUrl;
+        const url = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(window.location.href)}&bgcolor=1a1a1a&color=ffffff`;
+        qrImg.src = url;
       }
     })();
 
-    // Prevent zoom on double-tap
+    // Prevent zoom
     document.body.addEventListener('touchmove', (e) => {
       if (e.touches.length > 1) e.preventDefault();
     }, { passive: false });
