@@ -3,16 +3,18 @@ import { executeWithTerminalFallback } from './terminal-strategy.js';
 
 /**
  * Sanitize a string for safe use in AppleScript.
- * Escapes backslashes, double quotes, and control characters to prevent injection.
+ * Escapes backslashes, double quotes, control characters, and AppleScript special chars.
  * @internal
  */
 export function sanitizeForAppleScript(str: string): string {
   return str
-    .replace(/\\/g, '\\\\')
-    .replace(/"/g, '\\"')
-    .replace(/\n/g, '\\n')
-    .replace(/\r/g, '\\r')
-    .replace(/\t/g, '\\t');
+    .replace(/\\/g, '\\\\') // Backslash (must be first)
+    .replace(/"/g, '\\"') // Double quote
+    .replace(/\n/g, '\\n') // Newline
+    .replace(/\r/g, '\\r') // Carriage return
+    .replace(/\t/g, '\\t') // Tab
+    .replace(/\$/g, '\\$') // Dollar sign (variable reference in some contexts)
+    .replace(/`/g, '\\`'); // Backtick
 }
 
 /**

@@ -19,17 +19,23 @@ export function useServer(port = DEFAULT_PORT): UseServerResult {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    let serverInfo: ServerInfo | null = null;
+    // Use a ref-like object to track server across async boundaries
+    // This prevents race condition where cleanup runs before async completes
+    const serverRef: { current: ServerInfo | null } = { current: null };
     let isMounted = true;
 
     async function startServer() {
       try {
-        serverInfo = await createMobileServer(port);
+        const info = await createMobileServer(port);
         if (isMounted) {
-          setUrl(serverInfo.url);
-          setQrCode(serverInfo.qrCode);
-          setActualPort(serverInfo.port);
+          serverRef.current = info;
+          setUrl(info.url);
+          setQrCode(info.qrCode);
+          setActualPort(info.port);
           setLoading(false);
+        } else {
+          // Component unmounted during async operation - stop server immediately
+          info.stop();
         }
       } catch (err) {
         if (isMounted) {
@@ -43,8 +49,8 @@ export function useServer(port = DEFAULT_PORT): UseServerResult {
 
     return () => {
       isMounted = false;
-      if (serverInfo) {
-        serverInfo.stop();
+      if (serverRef.current) {
+        serverRef.current.stop();
       }
     };
   }, [port]);
