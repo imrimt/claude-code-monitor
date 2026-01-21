@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-01-22
+
+### Added
+
+- **Mobile Web Interface** - Monitor and control sessions from your smartphone
+  - Real-time session status via WebSocket
+  - View latest Claude messages with markdown rendering
+  - Focus terminal sessions remotely
+  - Send text messages to terminal (multi-line supported)
+  - Permission prompt responses (y/n/a) and Ctrl+C support
+  - Bottom sheet modal with swipe-to-close gesture
+- New command: `ccm serve` - Start mobile web server only
+- QR code display in terminal UI (press `h` to toggle)
+- Token-based authentication for mobile access
+- Auto-select available port when default port (3456) is in use
+
+### Changed
+
+- Redesigned README with demo GIFs for both Terminal UI and Mobile Web
+- Consolidated terminal fallback strategy for better code maintainability
+
+### Security
+
+- Mobile Web requires same Wi-Fi network (local network only)
+- Unique token generated per session for authentication
+- Warning messages about not sharing the access URL
+- Dangerous command detection in mobile input
+
 ## [1.0.4] - 2026-01-18
 
 ### Fixed
