@@ -13,6 +13,8 @@ npm start             # コンパイル済みJSを実行
 npm run test          # テスト実行（単発）
 npm run test:watch    # テスト実行（ウォッチモード）
 npm run test:coverage # カバレッジ付きテスト
+npx vitest tests/handler.test.ts           # 特定ファイルのテスト
+npx vitest -t "updateSession"              # 特定テスト名で絞り込み
 
 # コード品質
 npm run lint          # biomeでリントチェック
@@ -21,9 +23,22 @@ npm run format        # コードフォーマット
 npm run typecheck     # 型チェックのみ
 ```
 
+### フックイベントのテスト
+
+```bash
+# stdinからJSONを渡してフック処理をテスト
+echo '{"session_id":"test-123","cwd":"/tmp"}' | npx tsx src/bin/ccm.tsx hook PreToolUse
+```
+
 ## Architecture
 
 Claude Codeの複数セッションをリアルタイム監視するmacOS専用CLIツール。Ink（React for CLI）を使用したTUIとファイルベースの状態管理で動作する。
+
+### 重要なファイルパス
+
+- `~/.claude-monitor/sessions.json` - セッション状態の永続化ファイル
+- `~/.claude/settings.json` - Claude Codeのフック設定（`ccm setup`で自動設定）
+- `~/.claude/projects/*/TRANSCRIPT.md` - 各セッションの会話履歴
 
 ### データフロー
 
@@ -84,3 +99,10 @@ import { getSessions, getStatusDisplay, focusSession } from 'claude-code-monitor
 ```
 
 `src/index.ts`で公開APIをエクスポートしている。
+
+### テストファイル構成
+
+- `tests/handler.test.ts` - フックイベント処理のテスト
+- `tests/file-store.test.ts` - セッション状態管理のテスト
+- `tests/focus.test.ts` - ターミナルフォーカス機能のテスト
+- `tests/send-text.test.ts` - テキスト送信機能のテスト
