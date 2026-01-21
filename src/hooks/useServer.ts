@@ -4,13 +4,17 @@ import { createMobileServer, type ServerInfo } from '../server/index.js';
 interface UseServerResult {
   url: string | null;
   qrCode: string | null;
+  port: number | null;
   loading: boolean;
   error: Error | null;
 }
 
-export function useServer(port = 3456): UseServerResult {
+const DEFAULT_PORT = 3456;
+
+export function useServer(port = DEFAULT_PORT): UseServerResult {
   const [url, setUrl] = useState<string | null>(null);
   const [qrCode, setQrCode] = useState<string | null>(null);
+  const [actualPort, setActualPort] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -24,6 +28,7 @@ export function useServer(port = 3456): UseServerResult {
         if (isMounted) {
           setUrl(serverInfo.url);
           setQrCode(serverInfo.qrCode);
+          setActualPort(serverInfo.port);
           setLoading(false);
         }
       } catch (err) {
@@ -44,5 +49,5 @@ export function useServer(port = 3456): UseServerResult {
     };
   }, [port]);
 
-  return { url, qrCode, loading, error };
+  return { url, qrCode, port: actualPort, loading, error };
 }

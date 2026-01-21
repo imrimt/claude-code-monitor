@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
+import { createServer as createNetServer } from 'node:net';
 import { networkInterfaces } from 'node:os';
 import { dirname, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -13,6 +14,43 @@ import { focusSession } from '../utils/focus.js';
 import { sendTextToTerminal } from '../utils/send-text.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+const DEFAULT_PORT = 3456;
+const MAX_PORT_ATTEMPTS = 10;
+
+/**
+ * Check if a port is available.
+ */
+function isPortAvailable(port: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const server = createNetServer();
+    server.once('error', () => {
+      resolve(false);
+    });
+    server.once('listening', () => {
+      server.close(() => {
+        resolve(true);
+      });
+    });
+    server.listen(port, '0.0.0.0');
+  });
+}
+
+/**
+ * Find an available port starting from the given port.
+ * Tries up to MAX_PORT_ATTEMPTS ports.
+ */
+async function findAvailablePort(startPort: number): Promise<number> {
+  for (let i = 0; i < MAX_PORT_ATTEMPTS; i++) {
+    const port = startPort + i;
+    if (await isPortAvailable(port)) {
+      return port;
+    }
+  }
+  throw new Error(
+    `No available port found in range ${startPort}-${startPort + MAX_PORT_ATTEMPTS - 1}`
+  );
+}
 
 /**
  * Generate a random authentication token.
@@ -162,6 +200,7 @@ export interface ServerInfo {
   url: string;
   qrCode: string;
   token: string;
+  port: number;
   stop: () => void;
 }
 
@@ -270,37 +309,43 @@ function stopServerComponents({ watcher, wss, server }: ServerComponents): void 
   server.close();
 }
 
-export async function createMobileServer(port = 3456): Promise<ServerInfo> {
+export async function createMobileServer(port = DEFAULT_PORT): Promise<ServerInfo> {
+  const actualPort = await findAvailablePort(port);
   const localIP = getLocalIP();
   const token = generateAuthToken();
-  const url = `http://${localIP}:${port}?token=${token}`;
+  const url = `http://${localIP}:${actualPort}?token=${token}`;
   const qrCode = await generateQRCode(url);
 
   const components = createServerComponents(token);
 
   await new Promise<void>((resolve) => {
-    components.server.listen(port, '0.0.0.0', resolve);
+    components.server.listen(actualPort, '0.0.0.0', resolve);
   });
 
   return {
     url,
     qrCode,
     token,
+    port: actualPort,
     stop: () => stopServerComponents(components),
   };
 }
 
 // CLI standalone mode
-export function startServer(port = 3456): void {
+export async function startServer(port = DEFAULT_PORT): Promise<void> {
+  const actualPort = await findAvailablePort(port);
   const localIP = getLocalIP();
   const token = generateAuthToken();
-  const url = `http://${localIP}:${port}?token=${token}`;
+  const url = `http://${localIP}:${actualPort}?token=${token}`;
 
   const components = createServerComponents(token);
 
-  components.server.listen(port, '0.0.0.0', () => {
+  components.server.listen(actualPort, '0.0.0.0', () => {
     console.log('\n  Claude Code Monitor - Mobile Web Interface\n');
     console.log(`  Server running at: ${url}\n`);
+    if (actualPort !== port) {
+      console.log(`  (Port ${port} was in use, using ${actualPort} instead)\n`);
+    }
     console.log('  Scan this QR code with your phone:\n');
     qrcode.generate(url, { small: true });
     console.log('\n  Press Ctrl+C to stop the server.\n');

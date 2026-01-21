@@ -145,9 +145,9 @@ program
   .alias('s')
   .description('Start web server for mobile monitoring')
   .option('-p, --port <port>', 'Port number', '3456')
-  .action((options: { port: string }) => {
+  .action(async (options: { port: string }) => {
     const port = parseInt(options.port, 10);
-    startServer(port);
+    await startServer(port);
   });
 
 /**
