@@ -1055,10 +1055,6 @@
     });
 
     $msgInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey && !$sendBtn.disabled) {
-        e.preventDefault();
-        sendMsg();
-      }
       if (e.key === 'Escape') closeModal();
     });
 
