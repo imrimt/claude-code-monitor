@@ -970,11 +970,13 @@
       $warn.classList.remove('show');
       $sendBtn.disabled = true;
       $modal.classList.add('show');
+      document.body.style.overflow = 'hidden';
       setTimeout(() => $msgInput.focus(), 150);
     }
 
     function closeModal() {
       $modal.classList.remove('show');
+      document.body.style.overflow = '';
       targetSession = null;
     }
 
