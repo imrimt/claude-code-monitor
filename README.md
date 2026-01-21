@@ -6,9 +6,18 @@
 
 **Monitor multiple Claude Code sessions in real-time from your terminal or smartphone.**
 
+### Terminal UI
+Monitor sessions with keyboard navigation
+
 <p align="center">
-  <img src="https://raw.githubusercontent.com/onikan27/claude-code-monitor/main/docs/ccm-demo.gif" alt="Terminal UI Demo" width="600">
-  <img src="https://raw.githubusercontent.com/onikan27/claude-code-monitor/main/docs/mobile-web-demo.gif" alt="Mobile Web Demo" width="180">
+  <img src="https://raw.githubusercontent.com/onikan27/claude-code-monitor/main/docs/ccm-demo.gif" alt="Terminal UI Demo" width="800">
+</p>
+
+### Mobile Web
+Control from your phone (same Wi-Fi required)
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/onikan27/claude-code-monitor/main/docs/mobile-web-demo.gif" alt="Mobile Web Demo" width="800">
 </p>
 
 ---
