@@ -1,4 +1,5 @@
 import { executeAppleScript } from './applescript.js';
+import { executeWithTerminalFallback } from './terminal-strategy.js';
 
 /**
  * Sanitize a string for safe use in AppleScript.
@@ -101,14 +102,11 @@ export function focusSession(tty: string): boolean {
   if (!isMacOS()) return false;
   if (!isValidTtyPath(tty)) return false;
 
-  // Try each terminal in order (use the first one that succeeds)
-  const focusStrategies = [
-    () => focusITerm2(tty),
-    () => focusTerminalApp(tty),
-    () => focusGhostty(),
-  ];
-
-  return focusStrategies.some((tryFocus) => tryFocus());
+  return executeWithTerminalFallback({
+    iTerm2: () => focusITerm2(tty),
+    terminalApp: () => focusTerminalApp(tty),
+    ghostty: () => focusGhostty(),
+  });
 }
 
 export function getSupportedTerminals(): string[] {

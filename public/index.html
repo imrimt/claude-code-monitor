@@ -297,6 +297,20 @@
       font-style: italic;
     }
 
+    /* Modal Waiting Notice */
+    .modal-waiting-notice {
+      flex-shrink: 0;
+      padding: 16px 20px;
+      border-top: 1px solid var(--border-subtle);
+      background: var(--status-waiting-bg);
+      text-align: center;
+    }
+
+    .modal-waiting-notice-text {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--status-waiting);
+    }
 
     /* Empty State */
     .empty {
@@ -548,7 +562,7 @@
       border-radius: var(--radius-sm);
       padding: 16px;
       overflow-y: auto;
-      overflow-x: hidden;
+      overflow-x: auto;
       font-size: 15px;
       color: var(--text-secondary);
       line-height: 1.7;
@@ -615,7 +629,8 @@
       text-decoration: none;
     }
     .modal-message-content table {
-      width: 100%;
+      width: max-content;
+      min-width: 100%;
       border-collapse: collapse;
       margin: 14px 0;
       font-size: 14px;
@@ -624,6 +639,7 @@
       padding: 10px 12px;
       border: 1px solid var(--border-default);
       text-align: left;
+      white-space: nowrap;
     }
     .modal-message-content th {
       background: var(--bg-primary);
@@ -826,10 +842,13 @@
         </div>
       </div>
       <div class="modal-message">
-        <div class="modal-message-label">Message</div>
+        <div class="modal-message-label" id="modalMessageLabel">Message</div>
         <div class="modal-message-content" id="modalMessage">
           <span class="modal-message-empty">No messages yet</span>
         </div>
+      </div>
+      <div class="modal-waiting-notice" id="modalWaitingNotice" style="display: none;">
+        <div class="modal-waiting-notice-text">Permission required. Please respond on PC.</div>
       </div>
       <div class="modal-input">
         <div class="modal-input-row">
@@ -854,7 +873,9 @@
     const $modal = document.getElementById('modal');
     const $modalTitle = document.getElementById('modalTitle');
     const $modalPath = document.getElementById('modalPath');
+    const $modalMessageLabel = document.getElementById('modalMessageLabel');
     const $modalMessage = document.getElementById('modalMessage');
+    const $modalWaitingNotice = document.getElementById('modalWaitingNotice');
     const $msgInput = document.getElementById('msgInput');
     const $sendBtn = document.getElementById('sendBtn');
     const $warn = document.getElementById('warn');
@@ -962,16 +983,27 @@
       const session = getSessionById(id);
       if (!session) return;
 
+      const isWaiting = session.status === 'waiting_input';
+
       targetSession = id;
       $modalTitle.textContent = getDirName(session.cwd);
       $modalPath.textContent = formatPath(session.cwd);
+      $modalMessageLabel.textContent = 'Message';
       $modalMessage.innerHTML = renderMarkdown(session.lastMessage);
       $msgInput.value = '';
       $warn.classList.remove('show');
       $sendBtn.disabled = true;
+
+      // Show notice and disable input if waiting for permission
+      $modalWaitingNotice.style.display = isWaiting ? 'block' : 'none';
+      $msgInput.disabled = isWaiting;
+      $msgInput.placeholder = isWaiting ? 'Waiting for permission...' : 'Send a message...';
+
       $modal.classList.add('show');
       document.body.style.overflow = 'hidden';
-      setTimeout(() => $msgInput.focus(), 150);
+      if (!isWaiting) {
+        setTimeout(() => $msgInput.focus(), 150);
+      }
     }
 
     function closeModal() {
@@ -1134,12 +1166,19 @@
       const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
       ws = new WebSocket(`${proto}//${location.host}?token=${token}`);
 
-      ws.onopen = () => setConn(true);
+      ws.onopen = () => {
+        setConn(true);
+        pendingSend = null; // Reset pending state on reconnect
+      };
       ws.onclose = () => {
         setConn(false);
+        pendingSend = null; // Reset pending state on disconnect
         setTimeout(connect, RECONNECT_DELAY_MS);
       };
-      ws.onerror = () => setConn(false);
+      ws.onerror = () => {
+        setConn(false);
+        pendingSend = null;
+      };
       ws.onmessage = (event) => {
         try {
           const msg = JSON.parse(event.data);

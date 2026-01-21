@@ -73,7 +73,6 @@
     "@types/node": "^22.15.30",
     "@types/react": "^18.3.12",
     "@types/ws": "^8.18.1",
-    "@vitest/coverage-v8": "^4.0.17",
     "tsx": "^4.20.3",
     "typescript": "^5.8.3",
     "vitest": "^4.0.17"

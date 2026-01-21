@@ -11,7 +11,7 @@ import { type WebSocket, WebSocketServer } from 'ws';
 import { clearSessions, getSessions, getStorePath } from '../store/file-store.js';
 import type { Session } from '../types/index.js';
 import { focusSession } from '../utils/focus.js';
-import { sendTextToTerminal } from '../utils/send-text.js';
+import { sendKeystrokeToTerminal, sendTextToTerminal } from '../utils/send-text.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -60,9 +60,11 @@ function generateAuthToken(): string {
 }
 
 interface WebSocketMessage {
-  type: 'sessions' | 'focus' | 'sendText' | 'clearSessions';
+  type: 'sessions' | 'focus' | 'sendText' | 'sendKeystroke' | 'clearSessions';
   sessionId?: string;
   text?: string;
+  key?: string;
+  useControl?: boolean;
 }
 
 interface BroadcastMessage {
@@ -114,6 +116,27 @@ function handleSendTextCommand(ws: WebSocket, sessionId: string, text: string): 
 }
 
 /**
+ * Handle sendKeystroke command from WebSocket client.
+ * Used for permission prompt responses (y/n/a) and Ctrl+C.
+ */
+function handleSendKeystrokeCommand(
+  ws: WebSocket,
+  sessionId: string,
+  key: string,
+  useControl = false
+): void {
+  const session = findSessionById(sessionId);
+  if (!session?.tty) {
+    ws.send(
+      JSON.stringify({ type: 'sendKeystrokeResult', success: false, error: 'Session not found' })
+    );
+    return;
+  }
+  const result = sendKeystrokeToTerminal(session.tty, key, useControl);
+  ws.send(JSON.stringify({ type: 'sendKeystrokeResult', ...result }));
+}
+
+/**
  * Handle clearSessions command from WebSocket client.
  */
 function handleClearSessionsCommand(ws: WebSocket): void {
@@ -150,6 +173,11 @@ function handleWebSocketMessage(ws: WebSocket, data: Buffer): void {
 
   if (message.type === 'sendText' && message.sessionId && message.text) {
     handleSendTextCommand(ws, message.sessionId, message.text);
+    return;
+  }
+
+  if (message.type === 'sendKeystroke' && message.sessionId && message.key) {
+    handleSendKeystrokeCommand(ws, message.sessionId, message.key, message.useControl ?? false);
     return;
   }
 

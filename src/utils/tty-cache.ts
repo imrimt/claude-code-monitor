@@ -51,10 +51,3 @@ export function isTtyAlive(tty: string | undefined): boolean {
   return alive;
 }
 
-/**
- * Clear the TTY cache (useful for testing)
- * @internal
- */
-export function clearTtyCache(): void {
-  ttyCache.clear();
-}

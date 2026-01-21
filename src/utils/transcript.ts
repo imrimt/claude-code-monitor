@@ -12,8 +12,13 @@ export function buildTranscriptPath(cwd: string, sessionId: string): string {
   return join(homedir(), '.claude', 'projects', encodedCwd, `${sessionId}.jsonl`);
 }
 
+interface ContentBlock {
+  type: string;
+  text?: string;
+}
+
 /**
- * Get the last assistant message from a transcript file.
+ * Get the last assistant text message from a transcript file.
  */
 export function getLastAssistantMessage(transcriptPath: string): string | undefined {
   if (!transcriptPath || !existsSync(transcriptPath)) {
@@ -24,16 +29,17 @@ export function getLastAssistantMessage(transcriptPath: string): string | undefi
     const content = readFileSync(transcriptPath, 'utf-8');
     const lines = content.trim().split('\n').filter(Boolean);
 
-    // Read from end to find last assistant message
+    // Read from end to find last text message
     for (let i = lines.length - 1; i >= 0; i--) {
       try {
         const entry = JSON.parse(lines[i]);
         if (entry.type === 'assistant' && entry.message?.content) {
-          const contentBlocks = entry.message.content as Array<{ type: string; text?: string }>;
-          const textBlocks = contentBlocks.filter((block) => block.type === 'text');
-          const textParts = textBlocks.map((block) => block.text ?? '').join('\n');
-          if (textParts) {
-            return textParts;
+          const contentBlocks = entry.message.content as ContentBlock[];
+
+          for (const block of contentBlocks) {
+            if (block.type === 'text' && block.text) {
+              return block.text;
+            }
           }
         }
       } catch {
