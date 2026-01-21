@@ -25,6 +25,7 @@ function isPortAvailable(port: number): Promise<boolean> {
   return new Promise((resolve) => {
     const server = createNetServer();
     server.once('error', () => {
+      server.close(); // Ensure server is closed on error
       resolve(false);
     });
     server.once('listening', () => {
@@ -221,6 +222,12 @@ function setupWebSocketHandlers(wss: WebSocketServer, validToken: string): void 
 
     sendSessionsToClient(ws);
     ws.on('message', (data: Buffer) => handleWebSocketMessage(ws, data));
+
+    // Handle client connection errors to prevent process crashes
+    ws.on('error', (error) => {
+      // Log error but don't crash - client disconnections are expected
+      console.error('WebSocket client error:', error.message);
+    });
   });
 }
 
@@ -330,9 +337,17 @@ function createServerComponents(token: string): ServerComponents {
 
 /**
  * Stop all server components.
+ * Terminates all WebSocket clients before closing to prevent hanging.
  */
 function stopServerComponents({ watcher, wss, server }: ServerComponents): void {
-  watcher.close();
+  // Close file watcher (async but we don't wait - acceptable for shutdown)
+  void watcher.close();
+
+  // Terminate all WebSocket clients before closing server
+  for (const client of wss.clients) {
+    client.terminate();
+  }
+
   wss.close();
   server.close();
 }
@@ -379,9 +394,13 @@ export async function startServer(port = DEFAULT_PORT): Promise<void> {
     console.log('\n  Press Ctrl+C to stop the server.\n');
   });
 
-  process.on('SIGINT', () => {
+  // Graceful shutdown handler for both SIGINT (Ctrl+C) and SIGTERM (Docker/K8s)
+  const shutdown = () => {
     console.log('\n  Shutting down...');
     stopServerComponents(components);
     process.exit(0);
-  });
+  };
+
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
 }

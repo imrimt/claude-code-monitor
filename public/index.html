@@ -890,6 +890,14 @@
     let pendingSend = null;
     let sessionsData = [];
 
+    // Event delegation for card clicks (safer than inline onclick)
+    $sessions.addEventListener('click', (e) => {
+      const card = e.target.closest('.card');
+      if (card && card.dataset.sessionId) {
+        openModal(card.dataset.sessionId);
+      }
+    });
+
     const STATUS = {
       running: 'Running',
       waiting_input: 'Waiting for Input',
@@ -958,6 +966,23 @@
       const clean = text.replace(/[#*`_~\[\]]/g, '').replace(/\s+/g, ' ').trim();
       if (clean.length <= maxLen) return clean;
       return clean.slice(0, maxLen) + '...';
+    }
+
+    /**
+     * Escape HTML special characters to prevent XSS attacks.
+     */
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    /**
+     * Validate session ID format (alphanumeric, hyphens, underscores only).
+     */
+    function isValidSessionId(id) {
+      return /^[a-zA-Z0-9_-]+$/.test(id);
     }
 
     function renderMarkdown(markdownText) {
@@ -1118,13 +1143,18 @@
       }
 
       $sessions.innerHTML = list.map(session => {
-        const dirName = getDirName(session.cwd);
-        const shortPath = formatPath(session.cwd);
-        const statusLabel = STATUS[session.status];
-        const msgPreview = truncateMessage(session.lastMessage);
+        // Skip sessions with invalid IDs to prevent XSS
+        if (!isValidSessionId(session.session_id)) return '';
+
+        // Escape all user-provided content to prevent XSS
+        const dirName = escapeHtml(getDirName(session.cwd));
+        const shortPath = escapeHtml(formatPath(session.cwd));
+        const statusLabel = escapeHtml(STATUS[session.status]);
+        const msgPreview = escapeHtml(truncateMessage(session.lastMessage));
+        const safeStatus = escapeHtml(session.status);
 
         return `
-          <div class="card ${session.status}" onclick="openModal('${session.session_id}')">
+          <div class="card ${safeStatus}" data-session-id="${escapeHtml(session.session_id)}">
             <div class="card-status">
               <span class="card-status-dot"></span>
               <span>${statusLabel}</span>
