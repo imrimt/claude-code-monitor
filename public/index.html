@@ -1030,6 +1030,21 @@
       targetSession = null;
     }
 
+    function updateModalContent(session) {
+      if (!session) return;
+
+      const isWaiting = session.status === 'waiting_input';
+
+      $modalTitle.textContent = getDirName(session.cwd);
+      $modalPath.textContent = formatPath(session.cwd);
+      $modalMessage.innerHTML = renderMarkdown(session.lastMessage);
+
+      // Update waiting state
+      $modalWaitingNotice.style.display = isWaiting ? 'block' : 'none';
+      $msgInput.disabled = isWaiting;
+      $msgInput.placeholder = isWaiting ? 'Waiting for permission...' : 'Send a message...';
+    }
+
     function sendMsg() {
       const text = $msgInput.value.trim();
       if (!text || !targetSession) return;
@@ -1124,6 +1139,17 @@
 
     function render(list) {
       sessionsData = list || [];
+
+      // Update modal content if modal is open
+      if (targetSession) {
+        const session = getSessionById(targetSession);
+        if (session) {
+          updateModalContent(session);
+        } else {
+          // Session was deleted, close modal
+          closeModal();
+        }
+      }
 
       if (!list || !list.length) {
         $sessions.innerHTML = `
