@@ -77,6 +77,29 @@ interface BroadcastMessage {
 const WEBSOCKET_OPEN = 1;
 
 /**
+ * Patterns for dangerous shell commands that should be blocked.
+ * These commands can cause irreversible damage to the system.
+ */
+const DANGEROUS_COMMAND_PATTERNS: RegExp[] = [
+  /rm\s+(-rf?|--recursive)/i, // Recursive file deletion
+  /sudo\s+rm/i, // Sudo remove
+  /mkfs/i, // Format filesystem
+  /dd\s+if=/i, // Disk dump (can overwrite disks)
+  />\s*\/dev\//i, // Write to device files
+  /chmod\s+777/i, // Overly permissive permissions
+  /curl.*\|\s*(ba)?sh/i, // Pipe curl to shell
+  /wget.*\|\s*(ba)?sh/i, // Pipe wget to shell
+];
+
+/**
+ * Check if a command text contains dangerous patterns.
+ * Returns the matched pattern description if dangerous, undefined otherwise.
+ */
+function isDangerousCommand(text: string): boolean {
+  return DANGEROUS_COMMAND_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+/**
  * Find a session by session ID.
  */
 function findSessionById(sessionId: string): Session | undefined {
@@ -105,8 +128,21 @@ function handleFocusCommand(ws: WebSocket, sessionId: string): void {
 
 /**
  * Handle sendText command from WebSocket client.
+ * Validates input and blocks dangerous commands before execution.
  */
 function handleSendTextCommand(ws: WebSocket, sessionId: string, text: string): void {
+  // Block dangerous commands at server level
+  if (isDangerousCommand(text)) {
+    ws.send(
+      JSON.stringify({
+        type: 'sendTextResult',
+        success: false,
+        error: 'Dangerous command blocked for security',
+      })
+    );
+    return;
+  }
+
   const session = findSessionById(sessionId);
   if (!session?.tty) {
     ws.send(JSON.stringify({ type: 'sendTextResult', success: false, error: 'Session not found' }));
@@ -266,15 +302,18 @@ function getContentType(path: string): string {
 function serveStatic(req: IncomingMessage, res: ServerResponse, validToken: string): void {
   const url = new URL(req.url || '/', `http://${req.headers.host}`);
   const requestToken = url.searchParams.get('token');
+  const filePath = url.pathname === '/' ? '/index.html' : url.pathname;
 
-  if (requestToken !== validToken) {
+  // Allow static library files without token (they contain no sensitive data)
+  const isPublicLibrary = filePath.startsWith('/lib/') && filePath.endsWith('.js');
+
+  if (!isPublicLibrary && requestToken !== validToken) {
     res.writeHead(401, { 'Content-Type': 'text/plain' });
     res.end('Unauthorized - Invalid or missing token');
     return;
   }
 
   const publicDir = resolve(__dirname, '../../public');
-  const filePath = url.pathname === '/' ? '/index.html' : url.pathname;
 
   // Prevent directory traversal
   // Remove leading slashes and normalize to prevent absolute path injection
