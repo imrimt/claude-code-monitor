@@ -167,10 +167,17 @@ ccm clear
 
 ## 🔒 Security
 
+> **Warning**: This tool is designed for use on **trusted private networks only**.
+>
+> **Never use on public Wi-Fi** (cafes, airports, hotels, co-working spaces, etc.).
+> Other users on the same network could potentially intercept the authentication token
+> and gain control of your terminal sessions, including the ability to execute arbitrary commands.
+
 - **No data sent to external servers** - All data stays on your machine
 - Hook registration modifies `~/.claude/settings.json`
 - Focus feature uses AppleScript for terminal control
 - Mobile Web uses token authentication on local network only
+- Server-side validation blocks dangerous shell commands
 
 ---
 

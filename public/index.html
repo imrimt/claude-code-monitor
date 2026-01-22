@@ -6,8 +6,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Claude Code Monitor</title>
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
+  <script src="lib/marked.min.js"></script>
+  <script src="lib/purify.min.js"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -769,12 +769,6 @@
       line-height: 1.6;
     }
 
-    .desktop-qr {
-      margin-top: 32px;
-      border-radius: var(--radius-md);
-      box-shadow: var(--shadow-lg);
-    }
-
     @media (min-width: 1025px) and (pointer: fine) {
       .app, .toast, .modal-bg {
         display: none !important;
@@ -791,9 +785,8 @@
     <h1 class="desktop-warning-title">Mobile Only</h1>
     <p class="desktop-warning-text">
       This interface is designed for mobile devices.<br>
-      Scan the QR code to access from your phone.
+      Scan the QR code displayed in your terminal to access from your phone.
     </p>
-    <img id="qrcode" class="desktop-qr" alt="QR Code">
   </div>
 
   <div class="app">
@@ -1230,15 +1223,6 @@
     }
 
     connect();
-
-    // QR code for desktop
-    (function() {
-      const qrImg = document.getElementById('qrcode');
-      if (qrImg) {
-        const url = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(window.location.href)}&bgcolor=1a1a1a&color=ffffff`;
-        qrImg.src = url;
-      }
-    })();
 
     // Prevent zoom
     document.body.addEventListener('touchmove', (e) => {
