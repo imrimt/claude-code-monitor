@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.3] - 2026-01-22
+
+### Security
+
+- Bundle marked v12.0.2 and DOMPurify v3.3.1 locally (remove external CDN dependency)
+- Add server-side dangerous command blocking (rm -rf, sudo rm, mkfs, dd, chmod 777, curl|sh, wget|sh)
+- Remove external QR code API call that leaked authentication tokens
+- Add prominent public Wi-Fi security warning to README
+
+### Changed
+
+- Static library files (/lib/*.js) no longer require authentication token
+
 ## [1.1.2] - 2026-01-22
 
 ### Security
