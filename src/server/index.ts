@@ -19,9 +19,9 @@ const DEFAULT_PORT = 3456;
 const MAX_PORT_ATTEMPTS = 10;
 
 /**
- * Check if a port is available.
+ * Check if a port is available on the specified host.
  */
-function isPortAvailable(port: number): Promise<boolean> {
+function isPortAvailable(port: number, host: string): Promise<boolean> {
   return new Promise((resolve) => {
     const server = createNetServer();
     server.once('error', () => {
@@ -33,18 +33,18 @@ function isPortAvailable(port: number): Promise<boolean> {
         resolve(true);
       });
     });
-    server.listen(port, '0.0.0.0');
+    server.listen(port, host);
   });
 }
 
 /**
- * Find an available port starting from the given port.
+ * Find an available port starting from the given port on the specified host.
  * Tries up to MAX_PORT_ATTEMPTS ports.
  */
-async function findAvailablePort(startPort: number): Promise<number> {
+async function findAvailablePort(startPort: number, host: string): Promise<number> {
   for (let i = 0; i < MAX_PORT_ATTEMPTS; i++) {
     const port = startPort + i;
-    if (await isPortAvailable(port)) {
+    if (await isPortAvailable(port, host)) {
       return port;
     }
   }
@@ -392,8 +392,8 @@ function stopServerComponents({ watcher, wss, server }: ServerComponents): void 
 }
 
 export async function createMobileServer(port = DEFAULT_PORT): Promise<ServerInfo> {
-  const actualPort = await findAvailablePort(port);
   const localIP = getLocalIP();
+  const actualPort = await findAvailablePort(port, localIP);
   const token = generateAuthToken();
   const url = `http://${localIP}:${actualPort}?token=${token}`;
   const qrCode = await generateQRCode(url);
@@ -401,7 +401,7 @@ export async function createMobileServer(port = DEFAULT_PORT): Promise<ServerInf
   const components = createServerComponents(token);
 
   await new Promise<void>((resolve) => {
-    components.server.listen(actualPort, '0.0.0.0', resolve);
+    components.server.listen(actualPort, localIP, resolve);
   });
 
   return {
@@ -415,14 +415,14 @@ export async function createMobileServer(port = DEFAULT_PORT): Promise<ServerInf
 
 // CLI standalone mode
 export async function startServer(port = DEFAULT_PORT): Promise<void> {
-  const actualPort = await findAvailablePort(port);
   const localIP = getLocalIP();
+  const actualPort = await findAvailablePort(port, localIP);
   const token = generateAuthToken();
   const url = `http://${localIP}:${actualPort}?token=${token}`;
 
   const components = createServerComponents(token);
 
-  components.server.listen(actualPort, '0.0.0.0', () => {
+  components.server.listen(actualPort, localIP, () => {
     console.log('\n  Claude Code Monitor - Mobile Web Interface\n');
     console.log(`  Server running at: ${url}\n`);
     if (actualPort !== port) {
