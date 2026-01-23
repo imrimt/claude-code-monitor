@@ -1,10 +1,15 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import {
+  buildTitleWithTag,
   focusSession,
+  generateOscTitleSequence,
+  generateTitleTag,
   getSupportedTerminals,
   isMacOS,
   isValidTtyPath,
   sanitizeForAppleScript,
+  setGhosttyTitle,
+  setTtyTitle,
 } from '../src/utils/focus.js';
 
 describe('focus', () => {
@@ -73,6 +78,84 @@ describe('focus', () => {
       expect(isValidTtyPath('/dev/ttys001"; rm -rf /')).toBe(false);
       expect(isValidTtyPath('/dev/ttys001\n/dev/ttys002')).toBe(false);
       expect(isValidTtyPath('/dev/pts/0; echo pwned')).toBe(false);
+    });
+  });
+
+  describe('generateTitleTag', () => {
+    it('should generate tag from macOS tty path', () => {
+      expect(generateTitleTag('/dev/ttys001')).toBe('[CCM:ttys001]');
+      expect(generateTitleTag('/dev/ttys123')).toBe('[CCM:ttys123]');
+    });
+
+    it('should generate tag from macOS tty path without s', () => {
+      expect(generateTitleTag('/dev/tty0')).toBe('[CCM:tty0]');
+      expect(generateTitleTag('/dev/tty99')).toBe('[CCM:tty99]');
+    });
+
+    it('should generate tag from Linux pts path', () => {
+      expect(generateTitleTag('/dev/pts/0')).toBe('[CCM:pts-0]');
+      expect(generateTitleTag('/dev/pts/99')).toBe('[CCM:pts-99]');
+    });
+
+    it('should return empty string for invalid path', () => {
+      expect(generateTitleTag('/invalid/path')).toBe('');
+      expect(generateTitleTag('')).toBe('');
+      expect(generateTitleTag('/dev/null')).toBe('');
+      expect(generateTitleTag('/dev/tty')).toBe('');
+    });
+  });
+
+  describe('generateOscTitleSequence', () => {
+    it('should generate valid OSC sequence', () => {
+      expect(generateOscTitleSequence('Test')).toBe('\x1b]0;Test\x07');
+    });
+
+    it('should handle title with CCM tag', () => {
+      expect(generateOscTitleSequence('[CCM:ttys001]')).toBe('\x1b]0;[CCM:ttys001]\x07');
+    });
+
+    it('should handle empty title', () => {
+      expect(generateOscTitleSequence('')).toBe('\x1b]0;\x07');
+    });
+  });
+
+  describe('setTtyTitle', () => {
+    it('should return false for invalid tty path', () => {
+      expect(setTtyTitle('/invalid/path', 'Test')).toBe(false);
+      expect(setTtyTitle('', 'Test')).toBe(false);
+    });
+
+    it('should return false for non-existent tty', () => {
+      // This TTY is unlikely to exist
+      expect(setTtyTitle('/dev/ttys999', 'Test')).toBe(false);
+    });
+  });
+
+  describe('buildTitleWithTag', () => {
+    it('should build title with cwd basename and tag', () => {
+      expect(buildTitleWithTag('/dev/ttys001', '/Users/me/project')).toBe('project [CCM:ttys001]');
+    });
+
+    it('should handle cwd with trailing slash', () => {
+      expect(buildTitleWithTag('/dev/ttys001', '/Users/me/project/')).toBe('project [CCM:ttys001]');
+    });
+
+    it('should handle root path', () => {
+      expect(buildTitleWithTag('/dev/ttys001', '/')).toBe('/ [CCM:ttys001]');
+    });
+
+    it('should return empty string for invalid tty', () => {
+      expect(buildTitleWithTag('/invalid', '/Users/me/project')).toBe('');
+    });
+  });
+
+  describe('setGhosttyTitle', () => {
+    it('should return false for invalid tty path', () => {
+      expect(setGhosttyTitle('/invalid/path', '/Users/me/project')).toBe(false);
+    });
+
+    it('should return false for non-existent tty', () => {
+      expect(setGhosttyTitle('/dev/ttys999', '/Users/me/project')).toBe(false);
     });
   });
 
