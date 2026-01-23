@@ -161,6 +161,11 @@ function focusGhostty(tty: string): boolean {
 
   // Set title tag for window identification
   setTtyTitle(tty, titleTag);
+
+  // Wait for title to propagate to Window menu (Ghostty needs ~200-300ms)
+  const waitScript = 'delay 0.3';
+  executeAppleScript(waitScript);
+
   const success = executeAppleScript(buildGhosttyFocusByTitleScript(titleTag));
 
   // Clear title to let shell-integration restore it
