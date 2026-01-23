@@ -137,9 +137,9 @@ Monitor and control Claude Code sessions from your smartphone.
 
 | Terminal | Focus Support | Notes |
 |----------|--------------|-------|
-| iTerm2 | ✅ Full | TTY-based targeting |
-| Terminal.app | ✅ Full | TTY-based targeting |
-| Ghostty | ⚠️ Limited | App activation only |
+| iTerm2 | ✅ Full | TTY-based window/tab targeting |
+| Terminal.app | ✅ Full | TTY-based window/tab targeting |
+| Ghostty | ✅ Full | Title-based window targeting via Window menu |
 
 > Other terminals can use monitoring, but focus feature is not supported.
 
@@ -157,6 +157,7 @@ Monitor and control Claude Code sessions from your smartphone.
 
 1. Verify you're using a supported terminal
 2. Check System Preferences > Privacy & Security > Accessibility
+3. For Ghostty: Ensure "Accessibility" permission is granted for System Events
 
 ### Reset data
 
