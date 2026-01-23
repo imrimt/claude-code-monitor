@@ -183,11 +183,13 @@ function focusTerminalApp(tty: string): boolean {
 function focusGhostty(tty: string): boolean {
   const titleTag = generateTitleTag(tty);
 
-  // タイトルを設定してすぐにWindowメニューから検索してフォーカス
-  // Claude Codeがタイトルを上書きする前にフォーカスを完了させる
+  // タイトルタグを設定してフォーカス
   setTtyTitle(tty, titleTag);
-
   const success = executeAppleScript(buildGhosttyFocusByTitleScript(titleTag));
+
+  // 空タイトルを設定してshell-integrationに復元を任せる
+  setTtyTitle(tty, '');
+
   if (success) return true;
 
   // フォールバック: 従来のactivateのみ
