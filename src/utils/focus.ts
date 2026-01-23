@@ -1,5 +1,4 @@
 import { accessSync, constants, writeFileSync } from 'node:fs';
-import { basename } from 'node:path';
 import { executeAppleScript } from './applescript.js';
 import { executeWithTerminalFallback } from './terminal-strategy.js';
 
@@ -73,29 +72,6 @@ export function setTtyTitle(tty: string, title: string): boolean {
   } catch {
     return false;
   }
-}
-
-/**
- * Build a terminal title with cwd and CCM tag.
- * @example buildTitleWithTag('/dev/ttys001', '/Users/me/project') => 'project [CCM:ttys001]'
- * @internal
- */
-export function buildTitleWithTag(tty: string, cwd: string): string {
-  const tag = generateTitleTag(tty);
-  if (!tag) return '';
-  const cwdName = basename(cwd) || cwd;
-  return `${cwdName} ${tag}`;
-}
-
-/**
- * Set Ghostty terminal title with cwd and CCM tag.
- * Called during hook processing to maintain title context.
- * @returns true if title was set successfully
- */
-export function setGhosttyTitle(tty: string, cwd: string): boolean {
-  const title = buildTitleWithTag(tty, cwd);
-  if (!title) return false;
-  return setTtyTitle(tty, title);
 }
 
 function buildITerm2Script(tty: string): string {
@@ -183,16 +159,16 @@ function focusTerminalApp(tty: string): boolean {
 function focusGhostty(tty: string): boolean {
   const titleTag = generateTitleTag(tty);
 
-  // タイトルタグを設定してフォーカス
+  // Set title tag for window identification
   setTtyTitle(tty, titleTag);
   const success = executeAppleScript(buildGhosttyFocusByTitleScript(titleTag));
 
-  // 空タイトルを設定してshell-integrationに復元を任せる
+  // Clear title to let shell-integration restore it
   setTtyTitle(tty, '');
 
   if (success) return true;
 
-  // フォールバック: 従来のactivateのみ
+  // Fallback: activate Ghostty without specific window focus
   return executeAppleScript(buildGhosttyScript());
 }
 

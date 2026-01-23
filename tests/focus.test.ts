@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import {
-  buildTitleWithTag,
   focusSession,
   generateOscTitleSequence,
   generateTitleTag,
@@ -8,7 +7,6 @@ import {
   isMacOS,
   isValidTtyPath,
   sanitizeForAppleScript,
-  setGhosttyTitle,
   setTtyTitle,
 } from '../src/utils/focus.js';
 
@@ -128,34 +126,6 @@ describe('focus', () => {
     it('should return false for non-existent tty', () => {
       // This TTY is unlikely to exist
       expect(setTtyTitle('/dev/ttys999', 'Test')).toBe(false);
-    });
-  });
-
-  describe('buildTitleWithTag', () => {
-    it('should build title with cwd basename and tag', () => {
-      expect(buildTitleWithTag('/dev/ttys001', '/Users/me/project')).toBe('project [CCM:ttys001]');
-    });
-
-    it('should handle cwd with trailing slash', () => {
-      expect(buildTitleWithTag('/dev/ttys001', '/Users/me/project/')).toBe('project [CCM:ttys001]');
-    });
-
-    it('should handle root path', () => {
-      expect(buildTitleWithTag('/dev/ttys001', '/')).toBe('/ [CCM:ttys001]');
-    });
-
-    it('should return empty string for invalid tty', () => {
-      expect(buildTitleWithTag('/invalid', '/Users/me/project')).toBe('');
-    });
-  });
-
-  describe('setGhosttyTitle', () => {
-    it('should return false for invalid tty path', () => {
-      expect(setGhosttyTitle('/invalid/path', '/Users/me/project')).toBe(false);
-    });
-
-    it('should return false for non-existent tty', () => {
-      expect(setGhosttyTitle('/dev/ttys999', '/Users/me/project')).toBe(false);
     });
   });
 
