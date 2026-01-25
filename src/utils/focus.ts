@@ -145,14 +145,16 @@ tell application "System Events"
     end try
 
     -- If not found in menu, the tab might be inactive.
-    -- We need to search through all windows and tabs.
+    -- We need to search through all windows and tabs using "Show Next Tab" menu.
     -- First, remember the current frontmost window to restore if not found.
     set originalWindow to missing value
     try
       set originalWindow to front window
     end try
 
+    set windowMenu to menu "Window" of menu bar 1
     set windowCount to count of windows
+
     repeat with winIdx from 1 to windowCount
       try
         -- Focus this window
@@ -167,18 +169,33 @@ tell application "System Events"
           return true
         end if
 
-        -- Iterate through tabs using Cmd+N (goto_tab:N)
-        -- Ghostty default keybinds: super+1 to super+8 for goto_tab:1-8
-        repeat with tabIdx from 1 to 8
-          -- Switch to tab
-          keystroke (tabIdx as string) using {command down}
-          delay 0.08
+        -- Remember the first tab's title to detect when we've cycled through all tabs
+        set firstTabTitle to winName
 
-          -- Check the window title after tab switch
-          set winName to name of window 1
-          if winName contains "${safeTag}" then
-            return true
-          end if
+        -- Iterate through tabs using "Show Next Tab" menu item
+        -- Max 50 iterations to prevent infinite loop
+        repeat 50 times
+          try
+            -- Click "Show Next Tab" menu item
+            click menu item "Show Next Tab" of windowMenu
+            delay 0.1
+
+            -- Check the window title after tab switch
+            set winName to name of window 1
+
+            -- Found the target tab
+            if winName contains "${safeTag}" then
+              return true
+            end if
+
+            -- If we're back to the first tab, we've cycled through all tabs
+            if winName is equal to firstTabTitle then
+              exit repeat
+            end if
+          on error
+            -- "Show Next Tab" might be disabled (single tab window)
+            exit repeat
+          end try
         end repeat
       end try
     end repeat
