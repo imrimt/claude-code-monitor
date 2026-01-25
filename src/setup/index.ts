@@ -8,6 +8,9 @@ import { askConfirmation } from '../utils/prompt.js';
 const CLAUDE_DIR = join(homedir(), '.claude');
 const SETTINGS_FILE = join(CLAUDE_DIR, 'settings.json');
 
+/** Environment variable key to disable Claude Code terminal title override */
+const DISABLE_TITLE_ENV_KEY = 'CLAUDE_CODE_DISABLE_TERMINAL_TITLE';
+
 /** @internal */
 export interface HookConfig {
   type: 'command';
@@ -23,6 +26,7 @@ export interface HookEntry {
 /** @internal */
 export interface Settings {
   hooks?: Record<string, HookEntry[]>;
+  env?: Record<string, string>;
   [key: string]: unknown;
 }
 
@@ -52,6 +56,39 @@ function getCcmCommand(): string {
     return 'ccm';
   }
   return `npx ${PACKAGE_NAME}`;
+}
+
+/**
+ * Check if Ghostty is installed
+ * @internal
+ */
+export function isGhosttyInstalled(): boolean {
+  // Check if Ghostty.app exists
+  if (existsSync('/Applications/Ghostty.app')) {
+    return true;
+  }
+  // Check if ghostty command is in PATH
+  const result = spawnSync('which', ['ghostty'], { encoding: 'utf-8' });
+  return result.status === 0;
+}
+
+/**
+ * Check if the terminal title disable env is already configured
+ * @internal
+ */
+export function hasDisableTitleEnv(settings: Settings): boolean {
+  return settings.env?.[DISABLE_TITLE_ENV_KEY] === '1';
+}
+
+/**
+ * Apply the disable title environment variable to settings
+ * @internal
+ */
+function applyDisableTitleEnv(settings: Settings): void {
+  if (!settings.env) {
+    settings.env = {};
+  }
+  settings.env[DISABLE_TITLE_ENV_KEY] = '1';
 }
 
 /**
@@ -204,15 +241,30 @@ export async function setupHooks(): Promise<void> {
   const settings = loadSettings();
   const { toAdd: hooksToAdd, toSkip: hooksToSkip } = categorizeHooks(settings);
 
+  // Check for Ghostty and terminal title env
+  const ghosttyInstalled = isGhosttyInstalled();
+  const needsDisableTitleEnv = ghosttyInstalled && !hasDisableTitleEnv(settings);
+
   // No changes needed
-  if (hooksToAdd.length === 0) {
+  if (hooksToAdd.length === 0 && !needsDisableTitleEnv) {
     console.log('All hooks already configured. No changes needed.');
     console.log('');
     console.log(`Start monitoring with: ${baseCommand} watch`);
     return;
   }
 
-  showSetupPreview(hooksToAdd, hooksToSkip, settingsExist);
+  // Show hook setup preview
+  if (hooksToAdd.length > 0) {
+    showSetupPreview(hooksToAdd, hooksToSkip, settingsExist);
+  }
+
+  // Show Ghostty-specific setup
+  if (needsDisableTitleEnv) {
+    console.log('Ghostty detected:');
+    console.log('  [add]  env.CLAUDE_CODE_DISABLE_TERMINAL_TITLE = "1"');
+    console.log('         (Required for reliable tab focus in Ghostty)');
+    console.log('');
+  }
 
   const confirmed = await askConfirmation('Do you want to apply these changes?');
   if (!confirmed) {
@@ -221,10 +273,23 @@ export async function setupHooks(): Promise<void> {
     return;
   }
 
-  applyHooks(settings, hooksToAdd, baseCommand);
+  // Apply hooks
+  if (hooksToAdd.length > 0) {
+    applyHooks(settings, hooksToAdd, baseCommand);
+  }
 
+  // Apply Ghostty env setting
+  if (needsDisableTitleEnv) {
+    applyDisableTitleEnv(settings);
+    writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2), {
+      encoding: 'utf-8',
+      mode: 0o600,
+    });
+  }
+
+  const totalChanges = hooksToAdd.length + (needsDisableTitleEnv ? 1 : 0);
   console.log('');
-  console.log(`Setup complete! Added ${hooksToAdd.length} hook(s) to ${SETTINGS_FILE}`);
+  console.log(`Setup complete! Applied ${totalChanges} change(s) to ${SETTINGS_FILE}`);
   console.log('');
   console.log(`Start monitoring with: ${baseCommand} watch`);
 }
