@@ -145,7 +145,7 @@ Monitor and control Claude Code sessions from your smartphone.
 
 ### Ghostty Users
 
-For reliable focus functionality with multiple tabs, `ccm setup` will prompt you to add the following setting:
+For reliable focus functionality with multiple tabs, `ccm` or `ccm setup` will prompt you to add the following setting:
 
 ```json
 // ~/.claude/settings.json
@@ -158,7 +158,7 @@ For reliable focus functionality with multiple tabs, `ccm setup` will prompt you
 
 This prevents Claude Code from overwriting terminal titles, which is necessary for tab identification in Ghostty.
 
-If you skipped this during setup and want to enable it later, add the setting manually or delete `CLAUDE_CODE_MONITOR_GHOSTTY_ASKED` from your settings and run `ccm setup` again.
+If you skipped this during setup and want to enable it later, add the setting manually or delete `CLAUDE_CODE_MONITOR_GHOSTTY_ASKED` from your settings and run `ccm` again.
 
 ---
 
