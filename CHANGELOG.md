@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.10] - 2026-01-26
+
+### Fixed
+
+- Fix Ghostty focus not working when multiple windows are open
+  - Click Window menu item twice (Ghostty quirk: first selects tab, second brings window to front)
+  - Use `name` attribute instead of `title` for Window menu search
+  - Add `AXRaise` to ensure window comes to front
+  - Remove `activate` call that brought ccm window back to front
+- Fix Web UI sendText/sendKeystroke targeting wrong session in Ghostty
+  - Focus correct tab before sending text/keystroke
+  - Prevents input going to currently active window instead of target session
+
+### Changed
+
+- Simplify Ghostty focus logic by removing complex tab cycling in favor of Window menu click
+
 ## [1.1.9] - 2026-01-25
 
 ### Fixed
