@@ -1,5 +1,11 @@
 import { executeAppleScript } from './applescript.js';
-import { isMacOS, isValidTtyPath, sanitizeForAppleScript } from './focus.js';
+import {
+  generateTitleTag,
+  isMacOS,
+  isValidTtyPath,
+  sanitizeForAppleScript,
+  setTtyTitle,
+} from './focus.js';
 import { executeWithTerminalFallback } from './terminal-strategy.js';
 
 /**
@@ -103,17 +109,41 @@ end tell
  * Uses clipboard and Cmd+V to paste text, then sends Enter key.
  * This approach supports Unicode characters including Japanese.
  */
+function buildGhosttyFocusScript(titleTag: string): string {
+  const safeTag = sanitizeForAppleScript(titleTag);
+  return `
+tell application "System Events"
+  if not (exists process "Ghostty") then
+    return false
+  end if
+  tell process "Ghostty"
+    try
+      set windowMenu to menu "Window" of menu bar 1
+      set menuItems to every menu item of windowMenu whose name contains "${safeTag}"
+      if (count of menuItems) > 0 then
+        -- Ghostty quirk: first click selects the tab, second click brings the window to front
+        click item 1 of menuItems
+        delay 0.05
+        click item 1 of menuItems
+        delay 0.05
+        try
+          perform action "AXRaise" of window 1
+        end try
+        return true
+      end if
+    end try
+  end tell
+end tell
+return false
+`;
+}
+
 function buildGhosttySendTextScript(text: string): string {
   const safeText = sanitizeForAppleScript(text);
   return `
 set the clipboard to "${safeText}"
-tell application "Ghostty"
-  activate
-end tell
-delay 0.6
+delay 0.1
 tell application "System Events"
-  set frontmost of process "Ghostty" to true
-  delay 0.2
   tell process "Ghostty"
     keystroke "v" using command down
     delay 0.2
@@ -132,7 +162,28 @@ function sendTextToTerminalApp(tty: string, text: string): boolean {
   return executeAppleScript(buildTerminalAppSendTextScript(tty, text));
 }
 
-function sendTextToGhostty(text: string): boolean {
+function sendTextToGhostty(tty: string, text: string): boolean {
+  const titleTag = generateTitleTag(tty);
+
+  // Set title tag for window identification
+  const titleSet = setTtyTitle(tty, titleTag);
+
+  if (titleSet) {
+    // Wait for title to propagate to Window menu
+    const waitScript = 'delay 0.2';
+    executeAppleScript(waitScript);
+  }
+
+  // Focus the target tab first using Window menu
+  const focusScript = buildGhosttyFocusScript(titleTag);
+  executeAppleScript(focusScript);
+
+  // Clear title to let shell restore it
+  if (titleSet) {
+    setTtyTitle(tty, '');
+  }
+
+  // Now send text to the focused tab
   return executeAppleScript(buildGhosttySendTextScript(text));
 }
 
@@ -229,13 +280,8 @@ function buildGhosttyKeystrokeScript(key: string, useControl = false, useKeyCode
   const keystrokeCmd =
     useKeyCode !== undefined ? `key code ${useKeyCode}` : `keystroke "${safeKey}"${modifiers}`;
   return `
-tell application "Ghostty"
-  activate
-end tell
-delay 0.4
+delay 0.1
 tell application "System Events"
-  set frontmost of process "Ghostty" to true
-  delay 0.1
   tell process "Ghostty"
     ${keystrokeCmd}
   end tell
@@ -262,7 +308,33 @@ function sendKeystrokeToTerminalApp(
   return executeAppleScript(buildTerminalAppKeystrokeScript(tty, key, useControl, useKeyCode));
 }
 
-function sendKeystrokeToGhostty(key: string, useControl = false, useKeyCode?: number): boolean {
+function sendKeystrokeToGhostty(
+  tty: string,
+  key: string,
+  useControl = false,
+  useKeyCode?: number
+): boolean {
+  const titleTag = generateTitleTag(tty);
+
+  // Set title tag for window identification
+  const titleSet = setTtyTitle(tty, titleTag);
+
+  if (titleSet) {
+    // Wait for title to propagate to Window menu
+    const waitScript = 'delay 0.2';
+    executeAppleScript(waitScript);
+  }
+
+  // Focus the target tab first using Window menu
+  const focusScript = buildGhosttyFocusScript(titleTag);
+  executeAppleScript(focusScript);
+
+  // Clear title to let shell restore it
+  if (titleSet) {
+    setTtyTitle(tty, '');
+  }
+
+  // Now send keystroke to the focused tab
   return executeAppleScript(buildGhosttyKeystrokeScript(key, useControl, useKeyCode));
 }
 
@@ -300,7 +372,7 @@ export function sendTextToTerminal(
   const success = executeWithTerminalFallback({
     iTerm2: () => sendTextToITerm2(tty, text),
     terminalApp: () => sendTextToTerminalApp(tty, text),
-    ghostty: () => sendTextToGhostty(text),
+    ghostty: () => sendTextToGhostty(tty, text),
   });
 
   return success
@@ -378,7 +450,7 @@ export function sendKeystrokeToTerminal(
   const success = executeWithTerminalFallback({
     iTerm2: () => sendKeystrokeToITerm2(tty, key, useControl, useKeyCode),
     terminalApp: () => sendKeystrokeToTerminalApp(tty, key, useControl, useKeyCode),
-    ghostty: () => sendKeystrokeToGhostty(key, useControl, useKeyCode),
+    ghostty: () => sendKeystrokeToGhostty(tty, key, useControl, useKeyCode),
   });
 
   return success

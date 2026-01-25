@@ -132,81 +132,22 @@ tell application "System Events"
     return false
   end if
   tell process "Ghostty"
-    -- First, try to find in Window menu (works if tab is currently active)
+    -- Search Window menu for the title tag (uses "name" attribute, not "title")
     try
       set windowMenu to menu "Window" of menu bar 1
-      set menuItems to every menu item of windowMenu whose title contains "${safeTag}"
+      set menuItems to every menu item of windowMenu whose name contains "${safeTag}"
       if (count of menuItems) > 0 then
+        -- Ghostty quirk: first click selects the tab, second click brings the window to front
         click item 1 of menuItems
-        delay 0.1
-        tell application "Ghostty" to activate
+        delay 0.05
+        click item 1 of menuItems
+        delay 0.05
+        try
+          perform action "AXRaise" of window 1
+        end try
         return true
       end if
     end try
-
-    -- If not found in menu, the tab might be inactive.
-    -- We need to search through all windows and tabs using "Show Next Tab" menu.
-    -- First, remember the current frontmost window to restore if not found.
-    set originalWindow to missing value
-    try
-      set originalWindow to front window
-    end try
-
-    set windowMenu to menu "Window" of menu bar 1
-    set windowCount to count of windows
-
-    repeat with winIdx from 1 to windowCount
-      try
-        -- Focus this window
-        set targetWindow to window winIdx
-        perform action "AXRaise" of targetWindow
-        tell application "Ghostty" to activate
-        delay 0.05
-
-        -- Check if current active tab already has the title
-        set winName to name of window 1
-        if winName contains "${safeTag}" then
-          return true
-        end if
-
-        -- Remember the first tab's title to detect when we've cycled through all tabs
-        set firstTabTitle to winName
-
-        -- Iterate through tabs using "Show Next Tab" menu item
-        -- Max 50 iterations to prevent infinite loop
-        repeat 50 times
-          try
-            -- Click "Show Next Tab" menu item
-            click menu item "Show Next Tab" of windowMenu
-            delay 0.1
-
-            -- Check the window title after tab switch
-            set winName to name of window 1
-
-            -- Found the target tab
-            if winName contains "${safeTag}" then
-              return true
-            end if
-
-            -- If we're back to the first tab, we've cycled through all tabs
-            if winName is equal to firstTabTitle then
-              exit repeat
-            end if
-          on error
-            -- "Show Next Tab" might be disabled (single tab window)
-            exit repeat
-          end try
-        end repeat
-      end try
-    end repeat
-
-    -- Not found - restore original window if possible
-    if originalWindow is not missing value then
-      try
-        perform action "AXRaise" of originalWindow
-        tell application "Ghostty" to activate
-      end try
-    end if
   end tell
 end tell
 return false
@@ -225,19 +166,18 @@ function focusGhostty(tty: string): boolean {
   const titleTag = generateTitleTag(tty);
 
   // Set title tag for window identification
-  // This updates the terminal title so we can find it by searching
   const titleSet = setTtyTitle(tty, titleTag);
 
   if (titleSet) {
-    // Wait for title to propagate (terminal needs time to update)
-    const waitScript = 'delay 0.15';
+    // Wait for title to propagate to Window menu
+    const waitScript = 'delay 0.2';
     executeAppleScript(waitScript);
   }
 
-  // Try to focus by searching through windows and tabs
+  // Try to focus by searching Window menu for the title tag
   const success = executeAppleScript(buildGhosttyFocusByTitleScript(titleTag));
 
-  // Clear title to let shell-integration restore it
+  // Clear title to let shell restore it
   if (titleSet) {
     setTtyTitle(tty, '');
   }
