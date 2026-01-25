@@ -177,6 +177,11 @@ function focusGhostty(tty: string): boolean {
   // Try to focus by searching Window menu for the title tag
   const success = executeAppleScript(buildGhosttyFocusByTitleScript(titleTag));
 
+  // Clear title to let shell restore it
+  if (titleSet) {
+    setTtyTitle(tty, '');
+  }
+
   if (success) return true;
 
   // Fallback: activate Ghostty without specific window focus
