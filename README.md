@@ -14,7 +14,7 @@ Monitor sessions with keyboard navigation
 </p>
 
 ### Mobile Web
-Control from your phone (same Wi-Fi required)
+Control from your phone (same Wi-Fi or Tailscale)
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/onikan27/claude-code-monitor/main/docs/mobile-web-demo.gif" alt="Mobile Web Demo" width="800">
@@ -152,7 +152,7 @@ Monitor and control Claude Code sessions from your smartphone.
 
 ### Security
 
-> **Important**: Your smartphone and Mac must be on the **same Wi-Fi network**.
+> **Important**: Your smartphone and Mac must be on the **same Wi-Fi network** (or use Tailscale with `-t` option for remote access).
 
 - **Token Authentication** - A unique token is generated for authentication
 - **Local Network Only** - Not accessible from the internet
