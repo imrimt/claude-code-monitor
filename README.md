@@ -14,7 +14,7 @@ Monitor sessions with keyboard navigation
 </p>
 
 ### Mobile Web
-Control from your phone (same Wi-Fi required)
+Control from your phone (same Wi-Fi or Tailscale)
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/onikan27/claude-code-monitor/main/docs/mobile-web-demo.gif" alt="Mobile Web Demo" width="800">
@@ -71,6 +71,27 @@ On first run, it automatically sets up hooks and launches the monitor.
 
 > If port 3456 is in use, an available port is automatically selected.
 
+### Remote Access with Tailscale
+
+Access from anywhere using [Tailscale](https://tailscale.com/) (secure VPN).
+
+**Prerequisites:**
+1. Install Tailscale on your Mac and smartphone
+2. Sign in with the same Tailscale account on both devices
+3. Ensure Tailscale is connected (check menu bar icon)
+
+```bash
+# Start with Tailscale IP
+npx claude-code-monitor -t
+
+# Or if installed globally
+ccm -t
+```
+
+With `-t` option, the QR code URL uses your Tailscale IP (100.x.x.x), allowing access from any device in your Tailnet - even outside your local network.
+
+> **Security**: Tailscale uses WireGuard encryption. Communication is secure even over public networks.
+
 ---
 
 ## 📖 Usage
@@ -85,6 +106,14 @@ On first run, it automatically sets up hooks and launches the monitor.
 | `ccm setup` | - | Configure Claude Code hooks |
 | `ccm list` | `ccm ls` | List sessions |
 | `ccm clear` | - | Clear all sessions |
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--qr` | Show QR code on startup |
+| `-t, --tailscale` | Prefer Tailscale IP for mobile access |
+| `-p, --port <port>` | Specify port (serve command only) |
 
 ### Keybindings
 
@@ -123,13 +152,17 @@ Monitor and control Claude Code sessions from your smartphone.
 
 ### Security
 
-> **Important**: Your smartphone and Mac must be on the **same Wi-Fi network**.
+> **Important**: Your smartphone and Mac must be on the **same Wi-Fi network** (or use Tailscale with `-t` option for remote access).
 
 - **Token Authentication** - A unique token is generated for authentication
 - **Local Network Only** - Not accessible from the internet
 - **Do not share the URL** - Treat it like a password
 
-> **Warning**: Avoid using on public Wi-Fi networks (cafes, airports, etc.). Other users on the same network could potentially access your monitor. Use only on trusted private networks.
+**Recommended networks:**
+- Home Wi-Fi
+- Office/Work Wi-Fi
+
+> **Warning**: Avoid using on public Wi-Fi networks (cafes, airports, etc.). Other users on the same network could potentially access your monitor.
 
 ---
 
@@ -186,9 +219,9 @@ ccm clear
 
 ## 🔒 Security
 
-> **Warning**: This tool is designed for use on **trusted private networks only**.
+> **Warning**: Without Tailscale, this tool is designed for use on **trusted private networks only**.
 >
-> **Never use on public Wi-Fi** (cafes, airports, hotels, co-working spaces, etc.).
+> **Never use on public Wi-Fi** (cafes, airports, hotels, co-working spaces, etc.) without Tailscale.
 > Other users on the same network could potentially intercept the authentication token
 > and gain control of your terminal sessions, including the ability to execute arbitrary commands.
 
@@ -197,6 +230,17 @@ ccm clear
 - Focus feature uses AppleScript for terminal control
 - Mobile Web uses token authentication on local network only
 - Server-side validation blocks dangerous shell commands
+
+### Secure Remote Access
+
+For secure access from outside your local network, use the `-t` (Tailscale) option:
+
+| Mode | Network | Security |
+|------|---------|----------|
+| Default | Same Wi-Fi only | Home/Office Wi-Fi recommended |
+| `-t` (Tailscale) | Anywhere in Tailnet | WireGuard encrypted, safe on any network |
+
+With Tailscale, communication is encrypted end-to-end, making it safe to use even on public Wi-Fi (cafes, airports, etc.).
 
 ---
 
