@@ -1358,10 +1358,9 @@
       $warn.classList.remove('show');
       $sendBtn.disabled = true;
 
-      // Show notice and disable input if waiting for permission
+      // Show notice when waiting for permission (but keep input enabled)
       $modalWaitingNotice.style.display = isWaiting ? 'block' : 'none';
-      $msgInput.disabled = isWaiting;
-      $msgInput.placeholder = isWaiting ? 'Waiting for permission...' : 'Send a message...';
+      $msgInput.placeholder = 'Send a message...';
 
       // Show and enable direction pad when waiting for input
       $dpadSection.classList.toggle('show', isWaiting);
@@ -1373,9 +1372,7 @@
 
       $modal.classList.add('show');
       document.body.style.overflow = 'hidden';
-      if (!isWaiting) {
-        setTimeout(() => $msgInput.focus(), 150);
-      }
+      setTimeout(() => $msgInput.focus(), 150);
     }
 
     function closeModal() {
@@ -1393,10 +1390,8 @@
       $modalPath.textContent = formatPath(session.cwd);
       $modalMessage.innerHTML = renderMarkdown(session.lastMessage);
 
-      // Update waiting state
+      // Update waiting state (keep input enabled for text input)
       $modalWaitingNotice.style.display = isWaiting ? 'block' : 'none';
-      $msgInput.disabled = isWaiting;
-      $msgInput.placeholder = isWaiting ? 'Waiting for permission...' : 'Send a message...';
 
       // Update direction pad visibility
       $dpadSection.classList.toggle('show', isWaiting);
