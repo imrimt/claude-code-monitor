@@ -11,6 +11,7 @@ import { type WebSocket, WebSocketServer } from 'ws';
 import { clearSessions, getSessions, getStorePath } from '../store/file-store.js';
 import type { Session } from '../types/index.js';
 import { focusSession } from '../utils/focus.js';
+import { captureTerminalScreen } from '../utils/screen-capture.js';
 import { sendKeystrokeToTerminal, sendTextToTerminal } from '../utils/send-text.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -61,7 +62,7 @@ function generateAuthToken(): string {
 }
 
 interface WebSocketMessage {
-  type: 'sessions' | 'focus' | 'sendText' | 'sendKeystroke' | 'clearSessions';
+  type: 'sessions' | 'focus' | 'sendText' | 'sendKeystroke' | 'clearSessions' | 'captureScreen';
   sessionId?: string;
   text?: string;
   key?: string;
@@ -192,8 +193,52 @@ function handleClearSessionsCommand(ws: WebSocket): void {
 }
 
 /**
+ * Handle captureScreen command from WebSocket client.
+ * Captures the terminal window associated with the session's TTY.
+ */
+async function handleCaptureScreenCommand(ws: WebSocket, sessionId: string): Promise<void> {
+  const session = findSessionById(sessionId);
+  if (!session?.tty) {
+    ws.send(
+      JSON.stringify({
+        type: 'screenCaptureError',
+        message: 'Session not found or no TTY',
+      })
+    );
+    return;
+  }
+
+  try {
+    const base64Data = await captureTerminalScreen(session.tty);
+    if (base64Data === null) {
+      ws.send(
+        JSON.stringify({
+          type: 'screenCaptureError',
+          message: 'Failed to capture screen. Screen recording permission may be required.',
+        })
+      );
+      return;
+    }
+
+    ws.send(
+      JSON.stringify({
+        type: 'screenCapture',
+        data: base64Data,
+      })
+    );
+  } catch (error) {
+    ws.send(
+      JSON.stringify({
+        type: 'screenCaptureError',
+        message: error instanceof Error ? error.message : 'Unknown error during screen capture',
+      })
+    );
+  }
+}
+
+/**
  * Handle incoming WebSocket message from client.
- * Processes focus, sendText, and clearSessions commands.
+ * Processes focus, sendText, clearSessions, and captureScreen commands.
  */
 function handleWebSocketMessage(ws: WebSocket, data: Buffer): void {
   let message: WebSocketMessage;
@@ -220,6 +265,12 @@ function handleWebSocketMessage(ws: WebSocket, data: Buffer): void {
 
   if (message.type === 'clearSessions') {
     handleClearSessionsCommand(ws);
+    return;
+  }
+
+  if (message.type === 'captureScreen' && message.sessionId) {
+    // Handle async operation without blocking
+    void handleCaptureScreenCommand(ws, message.sessionId);
   }
 }
 
