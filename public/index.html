@@ -873,14 +873,17 @@
 
     /* Screen Capture */
     .capture-section {
-      flex-shrink: 0;
+      flex-shrink: 1;
+      min-height: 0;
       padding: 16px 20px;
       border-top: 1px solid var(--border-subtle);
       display: none;
+      overflow: hidden;
     }
 
     .capture-section.show {
-      display: block;
+      display: flex;
+      flex-direction: column;
     }
 
     .capture-header {
@@ -888,6 +891,7 @@
       align-items: center;
       justify-content: space-between;
       margin-bottom: 12px;
+      flex-shrink: 0;
     }
 
     .capture-label {
@@ -952,6 +956,9 @@
     .capture-image-container {
       display: none;
       margin-top: 12px;
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
     }
 
     .capture-image-container.show {
@@ -961,11 +968,12 @@
     .capture-image {
       width: 100%;
       height: auto;
-      max-height: 300px;
+      max-height: 200px;
       object-fit: contain;
       border-radius: var(--radius-sm);
       border: 1px solid var(--border-default);
       background: var(--bg-primary);
+      cursor: pointer;
     }
 
     .capture-error {
