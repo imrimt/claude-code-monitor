@@ -1,7 +1,8 @@
-import { execFile } from 'node:child_process';
+import { execFile, execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { readFile, unlink } from 'node:fs/promises';
 import { promisify } from 'node:util';
+import { generateTitleTag, sanitizeForAppleScript, setTtyTitle } from './focus.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -13,100 +14,37 @@ export function isMacOS(): boolean {
 }
 
 /**
- * Swift inline script to get window ID using CGWindowListCopyWindowInfo.
- * This finds the first window belonging to the specified application.
+ * Window bounds (position and size).
  */
-function buildSwiftWindowIdScript(appName: string): string {
-  // Escape single quotes in app name for Swift string
-  const safeAppName = appName.replace(/'/g, "\\'");
-  return `
-import Cocoa
-import CoreGraphics
-
-let appName = "${safeAppName}"
-
-// Get all windows
-guard let windowList = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] else {
-    print("-1")
-    exit(0)
-}
-
-// Find window for the specified app
-for window in windowList {
-    if let ownerName = window[kCGWindowOwnerName as String] as? String,
-       ownerName == appName,
-       let windowId = window[kCGWindowNumber as String] as? Int {
-        print(windowId)
-        exit(0)
-    }
-}
-
-// Not found
-print("-1")
-`;
+interface WindowBounds {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
 /**
- * Get the window ID of a terminal application.
- * Uses Swift with CGWindowListCopyWindowInfo to find the window.
+ * Capture a region of the screen and return the image as a Base64-encoded PNG.
+ * Uses macOS screencapture command with the -R flag to capture a specific region.
  *
- * @param appName - Name of the terminal app (e.g., "iTerm2", "Terminal", "Ghostty")
- * @returns Window ID if found, null otherwise
- */
-export async function getTerminalWindowId(appName: string): Promise<number | null> {
-  if (!isMacOS()) {
-    return null;
-  }
-
-  if (!appName || appName.trim() === '') {
-    return null;
-  }
-
-  const script = buildSwiftWindowIdScript(appName);
-
-  try {
-    const { stdout } = await execFileAsync('swift', ['-e', script], {
-      encoding: 'utf-8',
-      timeout: 10000, // 10 second timeout
-    });
-
-    const windowId = parseInt(stdout.trim(), 10);
-    if (Number.isNaN(windowId) || windowId < 0) {
-      return null;
-    }
-
-    return windowId;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Capture a window by its ID and return the image as a Base64-encoded PNG.
- * Uses macOS screencapture command with the -l flag to capture a specific window.
- *
- * @param windowId - The window ID to capture
+ * @param bounds - The region to capture (x, y, width, height)
  * @returns Base64-encoded PNG string if successful, null otherwise
  */
-export async function captureWindow(windowId: number): Promise<string | null> {
+async function captureRegion(bounds: WindowBounds): Promise<string | null> {
   if (!isMacOS()) {
-    return null;
-  }
-
-  if (windowId <= 0) {
     return null;
   }
 
   const tempPath = `/tmp/ccm-capture-${randomUUID()}.png`;
+  const region = `${bounds.x},${bounds.y},${bounds.width},${bounds.height}`;
 
   try {
-    // screencapture -l<windowId> -x -o <path>
-    // -l: capture specific window by ID
+    // screencapture -R x,y,width,height -x <path>
+    // -R: capture specific region
     // -x: no sound
-    // -o: no shadow
-    await execFileAsync('screencapture', [`-l${windowId}`, '-x', '-o', tempPath], {
+    await execFileAsync('screencapture', ['-R', region, '-x', tempPath], {
       encoding: 'utf-8',
-      timeout: 10000, // 10 second timeout
+      timeout: 10000,
     });
 
     // Read the captured image file
@@ -144,14 +82,201 @@ function isValidTtyPath(tty: string): boolean {
 }
 
 /**
- * Supported terminal applications.
- * Order matters: tries each in sequence until one succeeds.
+ * Execute an AppleScript and return the result as a string.
+ * @internal
  */
-const TERMINAL_APPS = ['iTerm2', 'Terminal', 'Ghostty'] as const;
+function executeAppleScriptWithResult(script: string): string | null {
+  try {
+    const result = execFileSync('osascript', ['-e', script], {
+      encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+      timeout: 10000,
+    }).trim();
+    return result;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Parse window bounds from AppleScript result.
+ * AppleScript returns "x, y, width, height" format.
+ * @internal
+ */
+function parseWindowBounds(result: string): WindowBounds | null {
+  const parts = result.split(',').map((s) => parseInt(s.trim(), 10));
+  if (parts.length !== 4 || parts.some(Number.isNaN)) {
+    return null;
+  }
+  return { x: parts[0], y: parts[1], width: parts[2], height: parts[3] };
+}
+
+/**
+ * Build AppleScript to find iTerm2 window bounds by TTY.
+ * Returns "x, y, width, height" format.
+ * @internal
+ */
+function buildITerm2WindowBoundsScript(tty: string): string {
+  const safeTty = sanitizeForAppleScript(tty);
+  return `
+tell application "System Events"
+  if not (exists process "iTerm2") then return ""
+end tell
+
+tell application "iTerm2"
+  repeat with aWindow in windows
+    repeat with aTab in tabs of aWindow
+      repeat with aSession in sessions of aTab
+        if tty of aSession is "${safeTty}" then
+          tell application "System Events"
+            tell process "iTerm2"
+              set windowList to windows
+              repeat with sysWindow in windowList
+                try
+                  set pos to position of sysWindow
+                  set sz to size of sysWindow
+                  return (item 1 of pos as text) & ", " & (item 2 of pos as text) & ", " & (item 1 of sz as text) & ", " & (item 2 of sz as text)
+                end try
+              end repeat
+            end tell
+          end tell
+        end if
+      end repeat
+    end repeat
+  end repeat
+end tell
+return ""
+`;
+}
+
+/**
+ * Build AppleScript to find Terminal.app window bounds by TTY.
+ * Returns "x, y, width, height" format.
+ * @internal
+ */
+function buildTerminalAppWindowBoundsScript(tty: string): string {
+  const safeTty = sanitizeForAppleScript(tty);
+  return `
+tell application "System Events"
+  if not (exists process "Terminal") then return ""
+end tell
+
+tell application "Terminal"
+  repeat with aWindow in windows
+    repeat with aTab in tabs of aWindow
+      if tty of aTab is "${safeTty}" then
+        set windowId to id of aWindow
+        tell application "System Events"
+          tell process "Terminal"
+            repeat with sysWindow in windows
+              try
+                set pos to position of sysWindow
+                set sz to size of sysWindow
+                return (item 1 of pos as text) & ", " & (item 2 of pos as text) & ", " & (item 1 of sz as text) & ", " & (item 2 of sz as text)
+              end try
+            end repeat
+          end tell
+        end tell
+      end if
+    end repeat
+  end repeat
+end tell
+return ""
+`;
+}
+
+/**
+ * Build AppleScript to find Ghostty window bounds by TTY (using title tag).
+ * Returns "x, y, width, height" format.
+ * @internal
+ */
+function buildGhosttyWindowBoundsScript(titleTag: string): string {
+  const safeTag = sanitizeForAppleScript(titleTag);
+  return `
+tell application "System Events"
+  if not (exists process "Ghostty") then return ""
+  tell process "Ghostty"
+    repeat with sysWindow in windows
+      try
+        set windowTitle to name of sysWindow
+        if windowTitle contains "${safeTag}" then
+          set pos to position of sysWindow
+          set sz to size of sysWindow
+          return (item 1 of pos as text) & ", " & (item 2 of pos as text) & ", " & (item 1 of sz as text) & ", " & (item 2 of sz as text)
+        end if
+      end try
+    end repeat
+    -- Fallback: return first window
+    if (count of windows) > 0 then
+      set sysWindow to window 1
+      set pos to position of sysWindow
+      set sz to size of sysWindow
+      return (item 1 of pos as text) & ", " & (item 2 of pos as text) & ", " & (item 1 of sz as text) & ", " & (item 2 of sz as text)
+    end if
+  end tell
+end tell
+return ""
+`;
+}
+
+/**
+ * Capture iTerm2 window by TTY using region capture.
+ * @internal
+ */
+async function captureITerm2(tty: string): Promise<string | null> {
+  const script = buildITerm2WindowBoundsScript(tty);
+  const result = executeAppleScriptWithResult(script);
+  if (!result) return null;
+  const bounds = parseWindowBounds(result);
+  if (!bounds) return null;
+  return await captureRegion(bounds);
+}
+
+/**
+ * Capture Terminal.app window by TTY using region capture.
+ * @internal
+ */
+async function captureTerminalApp(tty: string): Promise<string | null> {
+  const script = buildTerminalAppWindowBoundsScript(tty);
+  const result = executeAppleScriptWithResult(script);
+  if (!result) return null;
+  const bounds = parseWindowBounds(result);
+  if (!bounds) return null;
+  return await captureRegion(bounds);
+}
+
+/**
+ * Capture Ghostty window by TTY using region capture.
+ * @internal
+ */
+async function captureGhostty(tty: string): Promise<string | null> {
+  const titleTag = generateTitleTag(tty);
+
+  // Set title tag for window identification
+  const titleSet = setTtyTitle(tty, titleTag);
+
+  if (titleSet) {
+    // Wait for title to propagate
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+
+  const script = buildGhosttyWindowBoundsScript(titleTag);
+  const result = executeAppleScriptWithResult(script);
+
+  // Clear title to let shell restore it
+  if (titleSet) {
+    setTtyTitle(tty, '');
+  }
+
+  if (!result) return null;
+  const bounds = parseWindowBounds(result);
+  if (!bounds) return null;
+  return await captureRegion(bounds);
+}
 
 /**
  * Capture the terminal window associated with a TTY.
- * Tries to find and capture the window from iTerm2, Terminal.app, or Ghostty.
+ * Identifies the correct terminal by matching TTY, then captures that specific window.
  *
  * @param tty - The TTY path (e.g., "/dev/ttys001")
  * @returns Base64-encoded PNG string if successful, null otherwise
@@ -165,16 +290,16 @@ export async function captureTerminalScreen(tty: string): Promise<string | null>
     return null;
   }
 
-  // Try each terminal application in order
-  for (const appName of TERMINAL_APPS) {
-    const windowId = await getTerminalWindowId(appName);
-    if (windowId !== null) {
-      const base64 = await captureWindow(windowId);
-      if (base64 !== null) {
-        return base64;
-      }
-    }
-  }
+  // Try each terminal application using TTY-based identification
+  // (same pattern as focus.ts)
+  const result1 = await captureITerm2(tty);
+  if (result1) return result1;
+
+  const result2 = await captureTerminalApp(tty);
+  if (result2) return result2;
+
+  const result3 = await captureGhostty(tty);
+  if (result3) return result3;
 
   return null;
 }

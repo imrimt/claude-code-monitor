@@ -194,7 +194,7 @@ function handleClearSessionsCommand(ws: WebSocket): void {
 
 /**
  * Handle captureScreen command from WebSocket client.
- * Captures the terminal window associated with the session's TTY.
+ * Focuses the terminal window first, then captures it.
  */
 async function handleCaptureScreenCommand(ws: WebSocket, sessionId: string): Promise<void> {
   const session = findSessionById(sessionId);
@@ -209,6 +209,12 @@ async function handleCaptureScreenCommand(ws: WebSocket, sessionId: string): Pro
   }
 
   try {
+    // Focus the terminal window first to ensure it's visible
+    focusSession(session.tty);
+
+    // Wait a bit for the window to come to front
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
     const base64Data = await captureTerminalScreen(session.tty);
     if (base64Data === null) {
       ws.send(
