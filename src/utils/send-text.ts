@@ -388,7 +388,7 @@ export function sendTextToTerminal(
 /**
  * Allowed keys for permission prompt responses.
  */
-const ALLOWED_KEYS = new Set([
+export const ALLOWED_KEYS = new Set([
   'y',
   'n',
   'a',
@@ -402,7 +402,27 @@ const ALLOWED_KEYS = new Set([
   '8',
   '9',
   'escape',
+  'up',
+  'down',
+  'left',
+  'right',
+  'enter',
 ]);
+
+/**
+ * macOS key codes for arrow keys.
+ */
+export const ARROW_KEY_CODES = {
+  up: 126,
+  down: 125,
+  left: 123,
+  right: 124,
+} as const;
+
+/**
+ * macOS key code for Enter/Return key.
+ */
+export const ENTER_KEY_CODE = 36;
 
 /**
  * macOS key code for Escape key.
@@ -433,9 +453,12 @@ export function sendKeystrokeToTerminal(
 
   const lowerKey = key.toLowerCase();
   const isEscapeKey = lowerKey === 'escape';
+  const isArrowKey = lowerKey in ARROW_KEY_CODES;
+  const isEnterKey = lowerKey === 'enter';
+  const isSpecialKey = isEscapeKey || isArrowKey || isEnterKey;
 
-  // Validate key input (escape is special, others must be single character)
-  if (!isEscapeKey && (!key || key.length !== 1)) {
+  // Validate key input (special keys are allowed, others must be single character)
+  if (!isSpecialKey && (!key || key.length !== 1)) {
     return { success: false, error: 'Key must be a single character or "escape"' };
   }
 
@@ -449,8 +472,15 @@ export function sendKeystrokeToTerminal(
     return { success: false, error: 'Only Ctrl+C is supported' };
   }
 
-  // Determine if we need to use key code (for Escape key)
-  const useKeyCode = isEscapeKey ? ESCAPE_KEY_CODE : undefined;
+  // Determine if we need to use key code (for special keys)
+  let useKeyCode: number | undefined;
+  if (isEscapeKey) {
+    useKeyCode = ESCAPE_KEY_CODE;
+  } else if (isArrowKey) {
+    useKeyCode = ARROW_KEY_CODES[lowerKey as keyof typeof ARROW_KEY_CODES];
+  } else if (isEnterKey) {
+    useKeyCode = ENTER_KEY_CODE;
+  }
 
   const success = executeWithTerminalFallback({
     iTerm2: () => sendKeystrokeToITerm2(tty, key, useControl, useKeyCode),
