@@ -29,7 +29,8 @@ Control from your phone (same Wi-Fi or Tailscale)
 | Real-time session monitoring | Monitor from your smartphone |
 | Quick tab focus with keyboard | Remote terminal focus |
 | Vim-style navigation | Send messages to terminal |
-| Simple status display | Real-time sync via WebSocket |
+| Simple status display | Permission prompt navigation |
+| | Screen capture with pinch zoom |
 
 - 🔌 **Serverless** - File-based state management, no API server required
 - ⚡ **Easy Setup** - One command `ccm` for automatic setup and launch
@@ -147,6 +148,10 @@ Monitor and control Claude Code sessions from your smartphone.
 - View latest Claude messages
 - Focus terminal sessions remotely
 - Send text messages to terminal (multi-line supported)
+- **Permission prompt navigation** - Respond to permission dialogs remotely
+  - Direction pad for arrow keys (up/down/left/right) and Enter
+  - Screen capture to view terminal state
+  - Pinch zoom (1x-5x) for captured screenshots
 - Swipe-to-close gesture on modal
 - Warning display for dangerous commands
 
