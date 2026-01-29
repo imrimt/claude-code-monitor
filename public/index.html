@@ -1035,13 +1035,45 @@
       transform: scale(0.95);
     }
 
-    .fullscreen-overlay-image {
+    .fullscreen-overlay-image-container {
       width: 100%;
-      height: auto;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    .fullscreen-overlay-image {
       max-width: 100vw;
       max-height: 100vh;
       object-fit: contain;
-      padding: 16px;
+      transform-origin: center center;
+      transition: transform 0.1s ease-out;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .fullscreen-overlay-hint {
+      position: absolute;
+      bottom: calc(env(safe-area-inset-bottom, 16px) + 16px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.8);
+      pointer-events: none;
+      opacity: 1;
+      transition: opacity 0.3s;
+    }
+
+    .fullscreen-overlay-hint.hidden {
+      opacity: 0;
     }
 
     /* Desktop Warning */
@@ -1125,7 +1157,10 @@
 
   <div class="fullscreen-overlay" id="fullscreenOverlay">
     <button class="fullscreen-overlay-close" id="fullscreenClose" aria-label="Close fullscreen">&times;</button>
-    <img class="fullscreen-overlay-image" id="fullscreenImage" alt="Fullscreen terminal screenshot" />
+    <div class="fullscreen-overlay-image-container" id="fullscreenImageContainer">
+      <img class="fullscreen-overlay-image" id="fullscreenImage" alt="Fullscreen terminal screenshot" />
+    </div>
+    <div class="fullscreen-overlay-hint" id="fullscreenHint">Pinch to zoom</div>
   </div>
 
   <div class="modal-bg" id="modal">
@@ -1143,7 +1178,7 @@
           <button class="modal-close" onclick="closeModal()">&times;</button>
         </div>
       </div>
-      <div class="modal-message">
+      <div class="modal-message" id="modalMessageSection">
         <div class="modal-message-label" id="modalMessageLabel">Message</div>
         <div class="modal-message-content" id="modalMessage">
           <span class="modal-message-empty">No messages yet</span>
@@ -1198,6 +1233,7 @@
     const $modal = document.getElementById('modal');
     const $modalTitle = document.getElementById('modalTitle');
     const $modalPath = document.getElementById('modalPath');
+    const $modalMessageSection = document.getElementById('modalMessageSection');
     const $modalMessageLabel = document.getElementById('modalMessageLabel');
     const $modalMessage = document.getElementById('modalMessage');
     const $modalWaitingNotice = document.getElementById('modalWaitingNotice');
@@ -1216,8 +1252,10 @@
     const $captureImage = document.getElementById('captureImage');
     const $captureError = document.getElementById('captureError');
     const $fullscreenOverlay = document.getElementById('fullscreenOverlay');
+    const $fullscreenImageContainer = document.getElementById('fullscreenImageContainer');
     const $fullscreenImage = document.getElementById('fullscreenImage');
     const $fullscreenClose = document.getElementById('fullscreenClose');
+    const $fullscreenHint = document.getElementById('fullscreenHint');
 
     const TOAST_DURATION_MS = 2500;
     const RECONNECT_DELAY_MS = 2000;
@@ -1361,6 +1399,8 @@
 
       // Show notice when waiting for permission (but keep input enabled)
       $modalWaitingNotice.style.display = isWaiting ? 'block' : 'none';
+      // Hide message section when waiting for permission
+      $modalMessageSection.style.display = isWaiting ? 'none' : 'flex';
       $msgInput.placeholder = 'Send a message...';
 
       // Show and enable direction pad when waiting for input
@@ -1393,6 +1433,8 @@
 
       // Update waiting state (keep input enabled for text input)
       $modalWaitingNotice.style.display = isWaiting ? 'block' : 'none';
+      // Hide message section when waiting for permission
+      $modalMessageSection.style.display = isWaiting ? 'none' : 'flex';
 
       // Update direction pad visibility
       $dpadSection.classList.toggle('show', isWaiting);
@@ -1500,15 +1542,121 @@
       $captureImage.src = '';
     }
 
+    // Pinch zoom state
+    let zoomScale = 1;
+    let zoomTranslateX = 0;
+    let zoomTranslateY = 0;
+    let initialPinchDistance = 0;
+    let initialScale = 1;
+    let lastTouchX = 0;
+    let lastTouchY = 0;
+    let isPinching = false;
+    let isPanning = false;
+
+    const MIN_ZOOM = 1;
+    const MAX_ZOOM = 5;
+
+    function resetZoom() {
+      zoomScale = 1;
+      zoomTranslateX = 0;
+      zoomTranslateY = 0;
+      $fullscreenImage.style.transform = 'scale(1) translate(0px, 0px)';
+      $fullscreenHint.classList.remove('hidden');
+    }
+
+    function updateImageTransform() {
+      $fullscreenImage.style.transform = `scale(${zoomScale}) translate(${zoomTranslateX}px, ${zoomTranslateY}px)`;
+    }
+
+    function getDistance(touch1, touch2) {
+      const dx = touch1.clientX - touch2.clientX;
+      const dy = touch1.clientY - touch2.clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    function getMidpoint(touch1, touch2) {
+      return {
+        x: (touch1.clientX + touch2.clientX) / 2,
+        y: (touch1.clientY + touch2.clientY) / 2
+      };
+    }
+
+    function handleZoomTouchStart(e) {
+      if (e.touches.length === 2) {
+        // Pinch start
+        isPinching = true;
+        isPanning = false;
+        initialPinchDistance = getDistance(e.touches[0], e.touches[1]);
+        initialScale = zoomScale;
+        $fullscreenHint.classList.add('hidden');
+        e.preventDefault();
+      } else if (e.touches.length === 1 && zoomScale > 1) {
+        // Pan start (only when zoomed in)
+        isPanning = true;
+        isPinching = false;
+        lastTouchX = e.touches[0].clientX;
+        lastTouchY = e.touches[0].clientY;
+        e.preventDefault();
+      }
+    }
+
+    function handleZoomTouchMove(e) {
+      if (isPinching && e.touches.length === 2) {
+        // Pinch zoom
+        const currentDistance = getDistance(e.touches[0], e.touches[1]);
+        const scaleDelta = currentDistance / initialPinchDistance;
+        zoomScale = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, initialScale * scaleDelta));
+
+        // Reset translate if zooming out to 1x
+        if (zoomScale <= 1) {
+          zoomTranslateX = 0;
+          zoomTranslateY = 0;
+        }
+
+        updateImageTransform();
+        e.preventDefault();
+      } else if (isPanning && e.touches.length === 1 && zoomScale > 1) {
+        // Pan (drag to move when zoomed in)
+        const deltaX = (e.touches[0].clientX - lastTouchX) / zoomScale;
+        const deltaY = (e.touches[0].clientY - lastTouchY) / zoomScale;
+
+        // Limit panning based on zoom level
+        const maxTranslate = (zoomScale - 1) * 100;
+        zoomTranslateX = Math.min(maxTranslate, Math.max(-maxTranslate, zoomTranslateX + deltaX));
+        zoomTranslateY = Math.min(maxTranslate, Math.max(-maxTranslate, zoomTranslateY + deltaY));
+
+        lastTouchX = e.touches[0].clientX;
+        lastTouchY = e.touches[0].clientY;
+
+        updateImageTransform();
+        e.preventDefault();
+      }
+    }
+
+    function handleZoomTouchEnd(e) {
+      if (e.touches.length < 2) {
+        isPinching = false;
+      }
+      if (e.touches.length === 0) {
+        isPanning = false;
+        // Show hint again if zoomed out
+        if (zoomScale <= 1) {
+          $fullscreenHint.classList.remove('hidden');
+        }
+      }
+    }
+
     function openFullscreen() {
       if (!$captureImage.src || !$captureImage.src.startsWith('data:')) return;
       $fullscreenImage.src = $captureImage.src;
+      resetZoom();
       $fullscreenOverlay.classList.add('show');
       document.body.style.overflow = 'hidden';
     }
 
     function closeFullscreen() {
       $fullscreenOverlay.classList.remove('show');
+      resetZoom();
       // Only restore overflow if modal is not open
       if (!$modal.classList.contains('show')) {
         document.body.style.overflow = '';
@@ -1519,7 +1667,34 @@
     $captureImage.addEventListener('click', openFullscreen);
     $fullscreenClose.addEventListener('click', closeFullscreen);
     $fullscreenOverlay.addEventListener('click', (e) => {
-      if (e.target === $fullscreenOverlay) closeFullscreen();
+      // Only close if clicking outside the image and not zoomed in
+      if (e.target === $fullscreenOverlay && zoomScale <= 1) closeFullscreen();
+    });
+
+    // Pinch zoom event handlers
+    $fullscreenImageContainer.addEventListener('touchstart', handleZoomTouchStart, { passive: false });
+    $fullscreenImageContainer.addEventListener('touchmove', handleZoomTouchMove, { passive: false });
+    $fullscreenImageContainer.addEventListener('touchend', handleZoomTouchEnd);
+    $fullscreenImageContainer.addEventListener('touchcancel', handleZoomTouchEnd);
+
+    // Double tap to reset zoom
+    let lastTapTime = 0;
+    $fullscreenImageContainer.addEventListener('touchend', (e) => {
+      if (e.touches.length === 0 && !isPinching) {
+        const now = Date.now();
+        if (now - lastTapTime < 300) {
+          // Double tap detected
+          if (zoomScale > 1) {
+            resetZoom();
+          } else {
+            // Zoom in to 2x on double tap
+            zoomScale = 2;
+            updateImageTransform();
+            $fullscreenHint.classList.add('hidden');
+          }
+        }
+        lastTapTime = now;
+      }
     });
 
     function setDpadEnabled(enabled) {
@@ -1695,7 +1870,20 @@
           } else if (msg.type === 'clearSessionsResult') {
             if (!msg.success) toast(msg.error || 'Failed', 'err');
           } else if (msg.type === 'sendKeystrokeResult') {
-            if (!msg.success) toast(msg.error || 'Keystroke failed', 'err');
+            // Handle keystroke result (from dpad or text input in waiting_input state)
+            if (pendingSend) {
+              pendingSend = null;
+              $sendBtn.disabled = !$msgInput.value.trim();
+              if (msg.success) {
+                $msgInput.value = '';
+                $msgInput.style.height = '50px';
+                $sendBtn.disabled = true;
+              } else {
+                toast(msg.error || 'Keystroke failed', 'err');
+              }
+            } else if (!msg.success) {
+              toast(msg.error || 'Keystroke failed', 'err');
+            }
           } else if (msg.type === 'screenCapture') {
             handleScreenCapture(msg.data);
           } else if (msg.type === 'screenCaptureError') {
