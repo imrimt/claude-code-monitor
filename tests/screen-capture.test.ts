@@ -80,7 +80,8 @@ describe('screen-capture', () => {
     });
 
     it('should accept valid macOS tty format', async () => {
-      if (process.platform === 'darwin') {
+      // Skip on CI - AppleScript hangs without terminal apps
+      if (process.platform === 'darwin' && !process.env.CI) {
         // Valid format but TTY may not exist or terminal may not be running
         const result = await captureTerminalScreen('/dev/ttys999');
         // May return null (tty doesn't exist) or Base64 string (Ghostty fallback captures first window)
@@ -90,7 +91,8 @@ describe('screen-capture', () => {
     });
 
     it('should accept valid Linux tty format on macOS', async () => {
-      if (process.platform === 'darwin') {
+      // Skip on CI - AppleScript hangs without terminal apps
+      if (process.platform === 'darwin' && !process.env.CI) {
         // Linux format is accepted by the validator
         const result = await captureTerminalScreen('/dev/pts/0');
         // May return null or Base64 string (Ghostty fallback captures first window)

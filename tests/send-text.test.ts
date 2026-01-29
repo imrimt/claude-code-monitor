@@ -151,8 +151,8 @@ describe('send-text', () => {
     });
 
     it('should accept arrow keys as valid input (not reject for length or invalid key)', () => {
-      // Only test on macOS where this check is reached
-      if (process.platform === 'darwin') {
+      // Skip on CI - AppleScript hangs without terminal apps
+      if (process.platform === 'darwin' && !process.env.CI) {
         // These should not return "Invalid key" error or "Key must be a single character" error
         const upResult = sendKeystrokeToTerminal('/dev/ttys001', 'up');
         const downResult = sendKeystrokeToTerminal('/dev/ttys001', 'down');
@@ -174,7 +174,8 @@ describe('send-text', () => {
     });
 
     it('should accept enter key as valid input (not reject for length or invalid key)', () => {
-      if (process.platform === 'darwin') {
+      // Skip on CI - AppleScript hangs without terminal apps
+      if (process.platform === 'darwin' && !process.env.CI) {
         const result = sendKeystrokeToTerminal('/dev/ttys001', 'enter');
         expect(result.error).not.toBe('Invalid key. Allowed: y, n, a, 1-9, escape');
         expect(result.error).not.toBe('Key must be a single character or "escape"');
