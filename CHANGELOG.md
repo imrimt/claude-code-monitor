@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-01-30
+
+### Added
+
+- **Permission prompt navigation from mobile** - Respond to Claude Code permission dialogs remotely
+  - Direction pad (D-Pad) for arrow key navigation (up/down/left/right) and Enter key
+  - Screen capture to view terminal state on mobile device
+  - Works with iTerm2, Terminal.app, and Ghostty
+  - Auto-capture after 300ms debounce when using direction keys
+- **Pinch zoom for fullscreen screenshots**
+  - Pinch-to-zoom (1x-5x) for captured terminal images
+  - Pan/drag when zoomed in
+  - Double-tap to toggle zoom (reset or 2x)
+  - "Pinch to zoom" hint overlay
+- **Text input during permission prompts** - Send custom text even while waiting for permission
+
+### Changed
+
+- Swap screen capture and direction pad positions in mobile UI for better UX
+- Remove Swift/Xcode dependency for screen capture (pure AppleScript implementation)
+- Hide message section when waiting for permission prompt
+
+### Fixed
+
+- Fix captured screen image not displaying on mobile
+- Fix text input being blocked during permission prompt state
+- Skip AppleScript-based tests on CI environment (prevents timeout on GitHub Actions)
+
 ## [1.2.0] - 2026-01-27
 
 ### Added
