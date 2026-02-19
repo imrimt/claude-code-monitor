@@ -1,7 +1,8 @@
-import { execFile, execFileSync } from 'node:child_process';
+import { execFile } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { readFile, unlink } from 'node:fs/promises';
 import { promisify } from 'node:util';
+import { executeAppleScriptWithResult } from './applescript.js';
 import { generateTitleTag, sanitizeForAppleScript, setTtyTitle } from './focus.js';
 
 const execFileAsync = promisify(execFile);
@@ -79,23 +80,6 @@ const TTY_PATH_PATTERN = /^\/dev\/(ttys?\d+|pts\/\d+)$/;
  */
 function isValidTtyPath(tty: string): boolean {
   return TTY_PATH_PATTERN.test(tty);
-}
-
-/**
- * Execute an AppleScript and return the result as a string.
- * @internal
- */
-function executeAppleScriptWithResult(script: string): string | null {
-  try {
-    const result = execFileSync('osascript', ['-e', script], {
-      encoding: 'utf-8',
-      stdio: ['pipe', 'pipe', 'pipe'],
-      timeout: 10000,
-    }).trim();
-    return result;
-  } catch {
-    return null;
-  }
 }
 
 /**

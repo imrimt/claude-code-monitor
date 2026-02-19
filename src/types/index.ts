@@ -28,6 +28,7 @@ export interface Session {
   created_at: string;
   updated_at: string;
   lastMessage?: string;
+  tabName?: string;
 }
 
 // File store data structure

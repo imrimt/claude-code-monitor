@@ -3,6 +3,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { WRITE_DEBOUNCE_MS } from '../constants.js';
 import type { HookEvent, Session, SessionStatus, StoreData } from '../types/index.js';
+import { enrichSessionsWithTabNames } from '../utils/tab-name.js';
 import { getLastAssistantMessage } from '../utils/transcript.js';
 import { isTtyAlive } from '../utils/tty-cache.js';
 
@@ -204,8 +205,10 @@ export function getSessions(): Session[] {
     writeStore(store);
   }
 
-  return Object.values(store.sessions).sort(
-    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  return enrichSessionsWithTabNames(
+    Object.values(store.sessions).sort(
+      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    )
   );
 }
 

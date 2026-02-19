@@ -14,6 +14,11 @@ vi.mock('node:os', async (importOriginal) => {
   };
 });
 
+// Mock tab-name enrichment to avoid real AppleScript execution in tests
+vi.mock('../src/utils/tab-name.js', () => ({
+  enrichSessionsWithTabNames: (sessions: unknown[]) => sessions,
+}));
+
 // Mock isTtyAlive to return true for most TTYs, but false for specific test paths
 vi.mock('../src/utils/tty-cache.js', async (importOriginal) => {
   const original = await importOriginal<typeof import('../src/utils/tty-cache.js')>();

@@ -129,7 +129,11 @@ program
     for (const session of sessions) {
       const cwd = session.cwd.replace(/^\/Users\/[^/]+/, '~');
       const { symbol } = getStatusDisplay(session.status);
-      console.log(`${symbol} ${cwd}`);
+      if (session.tabName) {
+        console.log(`${symbol} ${session.tabName} (${cwd})`);
+      } else {
+        console.log(`${symbol} ${cwd}`);
+      }
     }
   });
 

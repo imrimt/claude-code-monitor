@@ -38,7 +38,14 @@ export const SessionCard = memo(function SessionCard({
       </Box>
       <Text> </Text>
       <Text dimColor>{relativeTime.padEnd(8)}</Text>
-      <Text color={isSelected ? 'white' : 'gray'}>{dir}</Text>
+      {session.tabName ? (
+        <>
+          <Text color="cyan">{session.tabName}</Text>
+          <Text dimColor> {dir}</Text>
+        </>
+      ) : (
+        <Text color={isSelected ? 'white' : 'gray'}>{dir}</Text>
+      )}
     </Box>
   );
 });

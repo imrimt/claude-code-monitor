@@ -16,3 +16,21 @@ export function executeAppleScript(script: string): boolean {
     return false;
   }
 }
+
+/**
+ * Execute an AppleScript and return the result as a string.
+ * @param script - AppleScript code to execute
+ * @returns trimmed result string, or null on failure/empty result
+ */
+export function executeAppleScriptWithResult(script: string): string | null {
+  try {
+    const result = execFileSync('osascript', ['-e', script], {
+      encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+      timeout: 10000,
+    }).trim();
+    return result || null;
+  } catch {
+    return null;
+  }
+}

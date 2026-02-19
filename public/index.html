@@ -1389,8 +1389,8 @@
       const isWaiting = session.status === 'waiting_input';
 
       targetSession = id;
-      $modalTitle.textContent = getDirName(session.cwd);
-      $modalPath.textContent = formatPath(session.cwd);
+      $modalTitle.textContent = session.tabName || getDirName(session.cwd);
+      $modalPath.textContent = session.tabName ? getDirName(session.cwd) + ' · ' + formatPath(session.cwd) : formatPath(session.cwd);
       $modalMessageLabel.textContent = 'Message';
       $modalMessage.innerHTML = renderMarkdown(session.lastMessage);
       $msgInput.value = '';
@@ -1432,8 +1432,8 @@
 
       const isWaiting = session.status === 'waiting_input';
 
-      $modalTitle.textContent = getDirName(session.cwd);
-      $modalPath.textContent = formatPath(session.cwd);
+      $modalTitle.textContent = session.tabName || getDirName(session.cwd);
+      $modalPath.textContent = session.tabName ? getDirName(session.cwd) + ' · ' + formatPath(session.cwd) : formatPath(session.cwd);
       $modalMessage.innerHTML = renderMarkdown(session.lastMessage);
 
       // Update waiting state (keep input enabled for text input)
@@ -1802,6 +1802,9 @@
         const statusLabel = escapeHtml(STATUS[session.status]);
         const msgPreview = escapeHtml(truncateMessage(session.lastMessage));
         const safeStatus = escapeHtml(session.status);
+        const safeTabName = session.tabName ? escapeHtml(session.tabName) : '';
+        const cardTitle = safeTabName || dirName;
+        const cardSubtitle = safeTabName ? dirName + ' · ' + shortPath : shortPath;
 
         return `
           <div class="card ${safeStatus}" data-session-id="${escapeHtml(session.session_id)}">
@@ -1811,8 +1814,8 @@
               <span class="card-status-chevron">›</span>
             </div>
             <div class="card-body">
-              <div class="card-name">${dirName}</div>
-              <div class="card-path">${shortPath}</div>
+              <div class="card-name">${cardTitle}</div>
+              <div class="card-path">${cardSubtitle}</div>
               <div class="card-message">
                 ${msgPreview
                   ? `<div class="card-message-text">${msgPreview}</div>`
