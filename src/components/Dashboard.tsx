@@ -15,11 +15,13 @@ interface DashboardProps {
   initialShowQr?: boolean;
   /** Prefer Tailscale IP for mobile access */
   preferTailscale?: boolean;
+  /** Disable the web server */
+  noServer?: boolean;
 }
 
-export function Dashboard({ initialShowQr, preferTailscale }: DashboardProps): React.ReactElement {
+export function Dashboard({ initialShowQr, preferTailscale, noServer }: DashboardProps): React.ReactElement {
   const { sessions, loading, error } = useSessions();
-  const { url, qrCode, tailscaleIP, loading: serverLoading } = useServer({ preferTailscale });
+  const { url, qrCode, tailscaleIP, loading: serverLoading } = useServer({ preferTailscale, disabled: noServer });
   const [selectedIndex, setSelectedIndex] = useState(0);
   const { exit } = useApp();
   const { stdout } = useStdout();
@@ -168,12 +170,12 @@ export function Dashboard({ initialShowQr, preferTailscale }: DashboardProps): R
         <Text dimColor>[Enter]Focus</Text>
         <Text dimColor>[1-9]Quick</Text>
         <Text dimColor>[c]Clear</Text>
-        <Text dimColor>[h]{qrCodeUserPref ? 'Hide' : 'Show'}URL</Text>
+        {!noServer && <Text dimColor>[h]{qrCodeUserPref ? 'Hide' : 'Show'}URL</Text>}
         <Text dimColor>[q]Quit</Text>
       </Box>
 
       {/* Web UI hint - shown when URL is hidden */}
-      {!serverLoading && url && !qrCodeUserPref && (
+      {!noServer && !serverLoading && url && !qrCodeUserPref && (
         <Box marginTop={1} borderStyle="round" borderColor="gray" paddingX={1}>
           <Text color="white">
             📱 Web UI available. Press [h] to show QR code for mobile access. (Same Wi-Fi required)
@@ -182,7 +184,7 @@ export function Dashboard({ initialShowQr, preferTailscale }: DashboardProps): R
       )}
 
       {/* Web UI - only shown when qrCodeUserPref is true (security: URL contains token) */}
-      {!serverLoading && url && qrCodeUserPref && (
+      {!noServer && !serverLoading && url && qrCodeUserPref && (
         <Box marginTop={1} paddingX={1}>
           {qrCodeVisible && qrCode && (
             <Box flexShrink={0}>
