@@ -93,7 +93,7 @@ program
   .version(pkg.version)
   .option('--qr', 'Show QR code for mobile access')
   .option('-t, --tailscale', 'Prefer Tailscale IP for mobile access')
-  .option('--no-server', 'Disable web server for mobile access');
+  .option('--server', 'Enable web server for mobile access');
 
 program
   .command('watch')
@@ -101,9 +101,9 @@ program
   .description('Start the monitoring TUI')
   .option('--qr', 'Show QR code for mobile access')
   .option('-t, --tailscale', 'Prefer Tailscale IP for mobile access')
-  .option('--no-server', 'Disable web server for mobile access')
+  .option('--server', 'Enable web server for mobile access')
   .action(async (options: { qr?: boolean; tailscale?: boolean; server?: boolean }) => {
-    await runWithAltScreen({ qr: options.qr, preferTailscale: options.tailscale, noServer: options.server === false });
+    await runWithAltScreen({ qr: options.qr, preferTailscale: options.tailscale, noServer: !options.server });
   });
 
 program
@@ -194,7 +194,7 @@ async function defaultAction(options: DashboardOptions = {}) {
 // Handle default action (no subcommand)
 program.action(async () => {
   const options = program.opts<{ qr?: boolean; tailscale?: boolean; server?: boolean }>();
-  await defaultAction({ qr: options.qr, preferTailscale: options.tailscale, noServer: options.server === false });
+  await defaultAction({ qr: options.qr, preferTailscale: options.tailscale, noServer: !options.server });
 });
 
 program.parse();
