@@ -37,3 +37,6 @@ export const HOOK_EVENTS = [
 
 /** Default port for mobile web server */
 export const DEFAULT_SERVER_PORT = 3456;
+
+/** Polling interval for process scanning in milliseconds (5 seconds) */
+export const PROCESS_SCAN_INTERVAL_MS = 5_000;

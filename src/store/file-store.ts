@@ -3,6 +3,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { WRITE_DEBOUNCE_MS } from '../constants.js';
 import type { HookEvent, Session, SessionStatus, StoreData } from '../types/index.js';
+import type { DetectedProcess } from '../utils/process-scanner.js';
 import { enrichSessionsWithTabNames } from '../utils/tab-name.js';
 import { getLastAssistantMessage } from '../utils/transcript.js';
 import { isTtyAlive } from '../utils/tty-cache.js';
@@ -227,6 +228,48 @@ export function removeSession(sessionId: string, tty?: string): void {
 
 export function clearSessions(): void {
   writeStore(getEmptyStoreData());
+}
+
+/** Sync detected process-based sessions (e.g., Codex) into the store */
+export function syncProcessSessions(detected: DetectedProcess[]): void {
+  const store = readStore();
+  const now = new Date().toISOString();
+
+  const detectedPids = new Set(detected.map((d) => d.pid));
+
+  // Update or create sessions for detected processes
+  for (const proc of detected) {
+    const sessionId = `codex-${proc.pid}`;
+    const key = getSessionKey(sessionId, proc.tty);
+
+    // Remove old sessions on the same TTY
+    removeOldSessionsOnSameTty(store.sessions, sessionId, proc.tty);
+
+    const existing = store.sessions[key];
+    store.sessions[key] = {
+      session_id: sessionId,
+      cwd: proc.cwd,
+      tty: proc.tty,
+      status: 'running',
+      created_at: existing?.created_at ?? now,
+      updated_at: now,
+      source: proc.source,
+    };
+  }
+
+  // Mark Codex sessions as stopped if their PID is no longer detected
+  for (const [key, session] of Object.entries(store.sessions)) {
+    if (session.source !== 'codex') continue;
+    if (session.status === 'stopped') continue;
+
+    // Extract PID from session_id "codex-<pid>"
+    const pid = Number.parseInt(session.session_id.replace('codex-', ''), 10);
+    if (!detectedPids.has(pid)) {
+      store.sessions[key] = { ...session, status: 'stopped', updated_at: now };
+    }
+  }
+
+  writeStore(store);
 }
 
 export function getStorePath(): string {

@@ -38,6 +38,11 @@ export const SessionCard = memo(function SessionCard({
       </Box>
       <Text> </Text>
       <Text dimColor>{relativeTime.padEnd(8)}</Text>
+      {session.source === 'codex' ? (
+        <Text color="magenta">[codex] </Text>
+      ) : (
+        <Text color="cyan">[claude] </Text>
+      )}
       {session.tabName ? (
         <>
           <Text color="cyan">{session.tabName}</Text>

@@ -2,6 +2,7 @@ import { Box, Text, useApp, useInput, useStdout } from 'ink';
 import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { MIN_TERMINAL_HEIGHT_FOR_QR } from '../constants.js';
+import { useProcessScanner } from '../hooks/useProcessScanner.js';
 import { useServer } from '../hooks/useServer.js';
 import { useSessions } from '../hooks/useSessions.js';
 import { clearSessions, readSettings, writeSettings } from '../store/file-store.js';
@@ -21,6 +22,7 @@ interface DashboardProps {
 
 export function Dashboard({ initialShowQr, preferTailscale, noServer }: DashboardProps): React.ReactElement {
   const { sessions, loading, error } = useSessions();
+  useProcessScanner(true);
   const { url, qrCode, tailscaleIP, loading: serverLoading } = useServer({ preferTailscale, disabled: noServer });
   const [selectedIndex, setSelectedIndex] = useState(0);
   const { exit } = useApp();

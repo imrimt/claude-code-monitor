@@ -19,6 +19,9 @@ export interface HookEvent {
 // Session status
 export type SessionStatus = 'running' | 'waiting_input' | 'stopped';
 
+// Session source (which CLI tool)
+export type SessionSource = 'claude-code' | 'codex';
+
 // Session information (minimal)
 export interface Session {
   session_id: string;
@@ -29,6 +32,7 @@ export interface Session {
   updated_at: string;
   lastMessage?: string;
   tabName?: string;
+  source?: SessionSource;
 }
 
 // File store data structure

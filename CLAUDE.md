@@ -42,10 +42,17 @@ Claude Codeの複数セッションをリアルタイム監視するmacOS専用C
 
 ### データフロー
 
+**Claude Code（フック経由）**:
 1. **Hook受信**: Claude Codeがフックイベント（PreToolUse, PostToolUse, Notification, Stop, UserPromptSubmit）を発火
 2. **状態更新**: `ccm hook <event>` コマンドがstdinからJSONを受け取り、`~/.claude-monitor/sessions.json` を更新
 3. **UI更新**: chokidarでファイル変更を検知し、Dashboardコンポーネントが再描画
 4. **モバイルWeb同期**: WebSocketで接続中のクライアントにセッション更新をブロードキャスト
+
+**Codex CLI（プロセススキャン経由）**:
+1. **プロセス検出**: 5秒間隔で`ps`コマンドを実行し、`codex`プロセスを検出
+2. **CWD取得**: `lsof`でプロセスの作業ディレクトリを取得
+3. **状態同期**: `syncProcessSessions()`で検出結果をストアに反映（新規→running、消失→stopped）
+4. **UI更新**: ストアファイル変更をchokidarが検知し、既存のフローで再描画
 
 ### ディレクトリ構成
 
@@ -57,9 +64,11 @@ Claude Codeの複数セッションをリアルタイム監視するmacOS専用C
 - `src/components/` - InkベースのReactコンポーネント（Dashboard, SessionCard, Spinner）
 - `src/hooks/useSessions.ts` - ファイル変更監視付きのReactフック
 - `src/hooks/useServer.ts` - モバイルサーバー起動用フック
+- `src/hooks/useProcessScanner.ts` - Codex CLIプロセスのポーリング検出フック
 - `src/utils/focus.ts` - AppleScriptによるターミナルフォーカス機能
 - `src/utils/status.ts` - ステータス表示ユーティリティ
-- `src/types/index.ts` - 型定義（HookEvent, Session, SessionStatus, StoreData）
+- `src/utils/process-scanner.ts` - Codex CLIプロセスの検出（ps + lsof）
+- `src/types/index.ts` - 型定義（HookEvent, Session, SessionSource, SessionStatus, StoreData）
 - `public/index.html` - モバイルWeb UI（静的HTML）
 
 ### 技術スタック
@@ -77,10 +86,17 @@ Claude Codeの複数セッションをリアルタイム監視するmacOS専用C
 
 セッションは`session_id:tty`の形式でキー管理される。同一TTYに新しいセッションが開始されると、古いセッションは自動削除される。
 
-**状態遷移**:
+各セッションは`source`フィールドで検出元を識別する（`'claude-code'` | `'codex'`、未設定はclaude-code扱い）。
+
+**Claude Code状態遷移**:
 - `running`: ツール実行中（PreToolUse, UserPromptSubmitで遷移）
 - `waiting_input`: 権限許可などの入力待ち（Notification + permission_promptで遷移）
 - `stopped`: セッション終了（Stopで遷移）
+
+**Codex CLI状態遷移**:
+- `running`: プロセスが検出されている間
+- `stopped`: プロセスが消失した時（`waiting_input`は未対応）
+- セッションIDは`codex-{pid}`形式
 
 セッションはTTYが存在しなくなると自動削除される。
 
@@ -106,3 +122,4 @@ import { getSessions, getStatusDisplay, focusSession } from 'claude-code-monitor
 - `tests/file-store.test.ts` - セッション状態管理のテスト
 - `tests/focus.test.ts` - ターミナルフォーカス機能のテスト
 - `tests/send-text.test.ts` - テキスト送信機能のテスト
+- `tests/process-scanner.test.ts` - Codexプロセス検出・同期のテスト
