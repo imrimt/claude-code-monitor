@@ -192,7 +192,7 @@ describe('process-scanner', () => {
       expect(sessions[0].tty).toBe('/dev/ttys001');
     });
 
-    it('should mark codex session as stopped when process disappears', async () => {
+    it('should remove codex session when process disappears', async () => {
       const { syncProcessSessions, getSessions, flushPendingWrites } = await import(
         '../src/store/file-store.js'
       );
@@ -206,9 +206,7 @@ describe('process-scanner', () => {
       flushPendingWrites();
 
       const sessions = getSessions();
-      expect(sessions).toHaveLength(1);
-      expect(sessions[0].session_id).toBe('codex-1234');
-      expect(sessions[0].status).toBe('stopped');
+      expect(sessions).toHaveLength(0);
     });
 
     it('should not affect claude-code sessions', async () => {

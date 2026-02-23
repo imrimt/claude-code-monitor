@@ -257,15 +257,13 @@ export function syncProcessSessions(detected: DetectedProcess[]): void {
     };
   }
 
-  // Mark Codex sessions as stopped if their PID is no longer detected
+  // Remove Codex sessions whose process is no longer running
   for (const [key, session] of Object.entries(store.sessions)) {
     if (session.source !== 'codex') continue;
-    if (session.status === 'stopped') continue;
 
-    // Extract PID from session_id "codex-<pid>"
     const pid = Number.parseInt(session.session_id.replace('codex-', ''), 10);
     if (!detectedPids.has(pid)) {
-      store.sessions[key] = { ...session, status: 'stopped', updated_at: now };
+      delete store.sessions[key];
     }
   }
 
