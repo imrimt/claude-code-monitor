@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://www.apple.com/macos/)
 
-**Monitor multiple Claude Code sessions in real-time from your terminal or smartphone.**
+**Monitor multiple Claude Code and Codex CLI sessions in real-time from your terminal or smartphone.**
 
 ### Terminal UI
 Monitor sessions with keyboard navigation
@@ -35,6 +35,7 @@ Control from your phone (same Wi-Fi or Tailscale)
 - 🔌 **Serverless** - File-based state management, no API server required
 - ⚡ **Easy Setup** - One command `ccm` for automatic setup and launch
 - 🔒 **Secure** - No external data transmission, token-based mobile auth
+- 🤖 **Multi-tool** - Monitors both Claude Code (via hooks) and OpenAI Codex CLI (via process scanning)
 
 ---
 
@@ -44,7 +45,7 @@ Control from your phone (same Wi-Fi or Tailscale)
 
 - **macOS**
 - **Node.js** >= 18.0.0
-- **Claude Code** installed
+- **Claude Code** and/or **OpenAI Codex CLI** installed
 
 ---
 
@@ -132,15 +133,24 @@ With `-t` option, the QR code URL uses your Tailscale IP (100.x.x.x), allowing a
 
 | Icon | Status | Description |
 |------|--------|-------------|
-| `●` | Running | Claude Code is processing |
-| `◐` | Waiting | Waiting for user input |
+| `●` | Running | Session is processing |
+| `◐` | Waiting | Waiting for user input (Claude Code only) |
 | `✓` | Done | Session ended |
+
+### Source Labels
+
+Each session displays a source label to identify the CLI tool:
+
+| Label | Source | Detection |
+|-------|--------|-----------|
+| `[claude]` | Claude Code | Hook events |
+| `[codex]` | OpenAI Codex CLI | Process scanning (5s interval) |
 
 ---
 
 ## 📱 Mobile Web Interface
 
-Monitor and control Claude Code sessions from your smartphone.
+Monitor and control sessions from your smartphone.
 
 ### Features
 
@@ -202,11 +212,17 @@ If you skipped this during setup and want to enable it later, add the setting ma
 
 ## 🔧 Troubleshooting
 
-### Sessions not showing
+### Claude Code sessions not showing
 
 1. Run `ccm setup` to verify hook configuration
 2. Check `~/.claude/settings.json` for hook settings
 3. Restart Claude Code
+
+### Codex sessions not showing
+
+1. Ensure `codex` is running in a terminal (not a background process)
+2. Sessions are detected via process scanning every 5 seconds — wait a moment
+3. Codex sessions are removed automatically when the process exits
 
 ### Focus not working
 
