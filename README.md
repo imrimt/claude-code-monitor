@@ -280,8 +280,8 @@ if (sessions[0]?.tty) {
 
 ## ⚠️ Disclaimer
 
-This is an unofficial community tool and is not affiliated with Anthropic.
-"Claude" and "Claude Code" are trademarks of Anthropic.
+This is an unofficial community tool and is not affiliated with Anthropic or OpenAI.
+"Claude" and "Claude Code" are trademarks of Anthropic. "Codex" is a trademark of OpenAI.
 
 ---
 
