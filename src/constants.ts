@@ -21,8 +21,8 @@ export const WRITE_DEBOUNCE_MS = 100;
 export const SESSION_REFRESH_INTERVAL_MS = 60_000;
 
 /**
- * QRコード表示に必要な最小ターミナル高さ
- * Header(1) + Sessions(3) + Shortcuts(2) + WebUI with QR(16) = 22行
+ * Minimum terminal height required to display QR code
+ * Header(1) + Sessions(3) + Shortcuts(2) + WebUI with QR(16) = 22 lines
  */
 export const MIN_TERMINAL_HEIGHT_FOR_QR = 22;
 

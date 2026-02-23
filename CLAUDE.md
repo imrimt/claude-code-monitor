@@ -5,121 +5,121 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Development Commands
 
 ```bash
-npm run dev           # 開発モード（ホットリロード付き）
-npm run build         # TypeScriptコンパイル
-npm start             # コンパイル済みJSを実行
+npm run dev           # Development mode (with hot reload)
+npm run build         # TypeScript compilation
+npm start             # Run compiled JS
 
-# テスト
-npm run test          # テスト実行（単発）
-npm run test:watch    # テスト実行（ウォッチモード）
-npm run test:coverage # カバレッジ付きテスト
-npx vitest tests/handler.test.ts           # 特定ファイルのテスト
-npx vitest -t "updateSession"              # 特定テスト名で絞り込み
+# Tests
+npm run test          # Run tests (single run)
+npm run test:watch    # Run tests (watch mode)
+npm run test:coverage # Run tests with coverage
+npx vitest tests/handler.test.ts           # Run specific test file
+npx vitest -t "updateSession"              # Filter by test name
 
-# コード品質
-npm run lint          # biomeでリントチェック
-npm run lint:fix      # リント自動修正
-npm run format        # コードフォーマット
-npm run typecheck     # 型チェックのみ
+# Code quality
+npm run lint          # Lint check with Biome
+npm run lint:fix      # Auto-fix lint issues
+npm run format        # Code formatting
+npm run typecheck     # Type checking only
 ```
 
-### フックイベントのテスト
+### Testing Hook Events
 
 ```bash
-# stdinからJSONを渡してフック処理をテスト
+# Test hook processing by passing JSON via stdin
 echo '{"session_id":"test-123","cwd":"/tmp"}' | npx tsx src/bin/ccm.tsx hook PreToolUse
 ```
 
 ## Architecture
 
-Claude Codeの複数セッションをリアルタイム監視するmacOS専用CLIツール。Ink（React for CLI）を使用したTUIとファイルベースの状態管理で動作する。
+A macOS-only CLI tool for real-time monitoring of multiple Claude Code and Codex CLI sessions. Uses Ink (React for CLI) for the TUI and file-based state management.
 
-### 重要なファイルパス
+### Key File Paths
 
-- `~/.claude-monitor/sessions.json` - セッション状態の永続化ファイル
-- `~/.claude/settings.json` - Claude Codeのフック設定（`ccm setup`で自動設定）
-- `~/.claude/projects/*/TRANSCRIPT.md` - 各セッションの会話履歴
+- `~/.claude-monitor/sessions.json` - Persistent session state file
+- `~/.claude/settings.json` - Claude Code hook configuration (auto-configured via `ccm setup`)
+- `~/.claude/projects/*/TRANSCRIPT.md` - Conversation history for each session
 
-### データフロー
+### Data Flow
 
-**Claude Code（フック経由）**:
-1. **Hook受信**: Claude Codeがフックイベント（PreToolUse, PostToolUse, Notification, Stop, UserPromptSubmit）を発火
-2. **状態更新**: `ccm hook <event>` コマンドがstdinからJSONを受け取り、`~/.claude-monitor/sessions.json` を更新
-3. **UI更新**: chokidarでファイル変更を検知し、Dashboardコンポーネントが再描画
-4. **モバイルWeb同期**: WebSocketで接続中のクライアントにセッション更新をブロードキャスト
+**Claude Code (via hooks)**:
+1. **Hook received**: Claude Code fires hook events (PreToolUse, PostToolUse, Notification, Stop, UserPromptSubmit)
+2. **State update**: `ccm hook <event>` reads JSON from stdin and updates `~/.claude-monitor/sessions.json`
+3. **UI update**: chokidar detects file changes, Dashboard component re-renders
+4. **Mobile Web sync**: Broadcasts session updates to connected WebSocket clients
 
-**Codex CLI（プロセススキャン経由）**:
-1. **プロセス検出**: 5秒間隔で`ps`コマンドを実行し、`codex`プロセスを検出
-2. **CWD取得**: `lsof`でプロセスの作業ディレクトリを取得
-3. **状態同期**: `syncProcessSessions()`で検出結果をストアに反映（新規→running、消失→stopped）
-4. **UI更新**: ストアファイル変更をchokidarが検知し、既存のフローで再描画
+**Codex CLI (via process scanning)**:
+1. **Process detection**: Runs `ps` command every 5 seconds to detect `codex` processes
+2. **CWD resolution**: Gets process working directory via `lsof`
+3. **State sync**: `syncProcessSessions()` reflects detected results in the store (new → running, gone → removed)
+4. **UI update**: chokidar detects store file changes and re-renders via the existing flow
 
-### ディレクトリ構成
+### Directory Structure
 
-- `src/bin/ccm.tsx` - CLIエントリーポイント（Commanderでコマンド定義）
-- `src/hook/handler.ts` - フックイベント処理（stdin読み取り→状態更新）
-- `src/store/file-store.ts` - セッション状態の永続化（JSON読み書き、TTY生存確認）
-- `src/setup/index.ts` - `~/.claude/settings.json` へのフック自動設定
-- `src/server/index.ts` - HTTP + WebSocketサーバー（モバイルWeb用）
-- `src/components/` - InkベースのReactコンポーネント（Dashboard, SessionCard, Spinner）
-- `src/hooks/useSessions.ts` - ファイル変更監視付きのReactフック
-- `src/hooks/useServer.ts` - モバイルサーバー起動用フック
-- `src/hooks/useProcessScanner.ts` - Codex CLIプロセスのポーリング検出フック
-- `src/utils/focus.ts` - AppleScriptによるターミナルフォーカス機能
-- `src/utils/status.ts` - ステータス表示ユーティリティ
-- `src/utils/process-scanner.ts` - Codex CLIプロセスの検出（ps + lsof）
-- `src/types/index.ts` - 型定義（HookEvent, Session, SessionSource, SessionStatus, StoreData）
-- `public/index.html` - モバイルWeb UI（静的HTML）
+- `src/bin/ccm.tsx` - CLI entry point (command definitions via Commander)
+- `src/hook/handler.ts` - Hook event processing (stdin reading → state update)
+- `src/store/file-store.ts` - Session state persistence (JSON read/write, TTY liveness check)
+- `src/setup/index.ts` - Auto-configuration of hooks in `~/.claude/settings.json`
+- `src/server/index.ts` - HTTP + WebSocket server (for mobile web)
+- `src/components/` - Ink-based React components (Dashboard, SessionCard, Spinner)
+- `src/hooks/useSessions.ts` - React hook with file change monitoring
+- `src/hooks/useServer.ts` - Hook for starting the mobile server
+- `src/hooks/useProcessScanner.ts` - Polling hook for Codex CLI process detection
+- `src/utils/focus.ts` - Terminal focus via AppleScript
+- `src/utils/status.ts` - Status display utility
+- `src/utils/process-scanner.ts` - Codex CLI process detection (ps + lsof)
+- `src/types/index.ts` - Type definitions (HookEvent, Session, SessionSource, SessionStatus, StoreData)
+- `public/index.html` - Mobile Web UI (static HTML)
 
-### 技術スタック
+### Tech Stack
 
 - **UI**: Ink v5 + React 18
 - **CLI**: Commander
-- **ファイル監視**: chokidar
+- **File watching**: chokidar
 - **WebSocket**: ws
-- **QRコード生成**: qrcode-terminal
-- **ターミナル制御**: AppleScript（iTerm2, Terminal.app, Ghostty対応）
-- **テスト**: Vitest
-- **リント/フォーマット**: Biome
+- **QR code generation**: qrcode-terminal
+- **Terminal control**: AppleScript (iTerm2, Terminal.app, Ghostty)
+- **Testing**: Vitest
+- **Linting/Formatting**: Biome
 
-### セッション管理
+### Session Management
 
-セッションは`session_id:tty`の形式でキー管理される。同一TTYに新しいセッションが開始されると、古いセッションは自動削除される。
+Sessions are keyed as `session_id:tty`. When a new session starts on the same TTY, the old session is automatically removed.
 
-各セッションは`source`フィールドで検出元を識別する（`'claude-code'` | `'codex'`、未設定はclaude-code扱い）。
+Each session has a `source` field to identify its origin (`'claude-code'` | `'codex'`; unset defaults to claude-code).
 
-**Claude Code状態遷移**:
-- `running`: ツール実行中（PreToolUse, UserPromptSubmitで遷移）
-- `waiting_input`: 権限許可などの入力待ち（Notification + permission_promptで遷移）
-- `stopped`: セッション終了（Stopで遷移）
+**Claude Code state transitions**:
+- `running`: Tool executing (transitions on PreToolUse, UserPromptSubmit)
+- `waiting_input`: Waiting for permission approval (transitions on Notification + permission_prompt)
+- `stopped`: Session ended (transitions on Stop)
 
-**Codex CLI状態遷移**:
-- `running`: プロセスが検出されている間
-- `stopped`: プロセスが消失した時（`waiting_input`は未対応）
-- セッションIDは`codex-{pid}`形式
+**Codex CLI state transitions**:
+- `running`: While the process is detected
+- Removed from store when process exits (`waiting_input` not supported)
+- Session ID format: `codex-{pid}`
 
-セッションはTTYが存在しなくなると自動削除される。
+Sessions are automatically removed when their TTY no longer exists.
 
-### モバイルWebインターフェース
+### Mobile Web Interface
 
-`ccm`または`ccm watch`実行時にWebサーバーが自動起動し、Dashboard UIにQRコードが表示される。スマートフォンからセッション監視とフォーカス操作が可能。
+A web server starts automatically when running `ccm` or `ccm watch`, displaying a QR code in the Dashboard UI. Allows session monitoring and focus control from a smartphone.
 
-- HTTPサーバー: `public/index.html`を配信（デフォルトポート3456）
-- WebSocket: セッション更新のリアルタイム同期、フォーカスコマンドの受信
-- `ccm serve`で単独のWebサーバーモードとしても起動可能
+- HTTP server: Serves `public/index.html` (default port 3456)
+- WebSocket: Real-time session sync, receives focus commands
+- `ccm serve` can also be used as a standalone web server mode
 
-### ライブラリとしての使用
+### Library Usage
 
 ```typescript
 import { getSessions, getStatusDisplay, focusSession } from 'claude-code-monitor';
 ```
 
-`src/index.ts`で公開APIをエクスポートしている。
+Public API is exported from `src/index.ts`.
 
-### テストファイル構成
+### Test File Structure
 
-- `tests/handler.test.ts` - フックイベント処理のテスト
-- `tests/file-store.test.ts` - セッション状態管理のテスト
-- `tests/focus.test.ts` - ターミナルフォーカス機能のテスト
-- `tests/send-text.test.ts` - テキスト送信機能のテスト
-- `tests/process-scanner.test.ts` - Codexプロセス検出・同期のテスト
+- `tests/handler.test.ts` - Hook event processing tests
+- `tests/file-store.test.ts` - Session state management tests
+- `tests/focus.test.ts` - Terminal focus functionality tests
+- `tests/send-text.test.ts` - Text sending functionality tests
+- `tests/process-scanner.test.ts` - Codex process detection and sync tests

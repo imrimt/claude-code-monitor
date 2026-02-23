@@ -28,7 +28,7 @@ export function Dashboard({ initialShowQr, preferTailscale, noServer }: Dashboar
   const { exit } = useApp();
   const { stdout } = useStdout();
 
-  // QRコード表示状態: --qrフラグが指定された場合はそれを優先、なければ設定を読み込む
+  // QR code visibility: prioritize --qr flag if specified, otherwise read from settings
   const [qrCodeUserPref, setQrCodeUserPref] = useState(
     () => initialShowQr ?? readSettings().qrCodeVisible
   );

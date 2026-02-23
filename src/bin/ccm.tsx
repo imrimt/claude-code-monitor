@@ -42,7 +42,7 @@ function getTtyFromAncestors(): string | undefined {
       currentPid = parseInt(ppid, 10);
     }
   } catch {
-    // TTY取得失敗は正常（バックグラウンド実行時など）
+    // Failing to get TTY is normal (e.g., when running in background)
   }
   return undefined;
 }
@@ -58,7 +58,7 @@ interface DashboardOptions {
  */
 async function runWithAltScreen(options: DashboardOptions = {}) {
   process.stdout.write(ENTER_ALT_SCREEN);
-  // カーソルを非表示にして、より安定したレンダリングを行う
+  // Hide cursor for more stable rendering
   process.stdout.write('\x1b[?25l');
 
   const instance = render(
@@ -66,7 +66,7 @@ async function runWithAltScreen(options: DashboardOptions = {}) {
     { patchConsole: false }
   );
 
-  // リサイズ時にInkの描画をクリアして再描画
+  // Clear and re-render Ink on terminal resize
   const handleResize = () => {
     instance.clear();
     instance.rerender(
@@ -79,7 +79,7 @@ async function runWithAltScreen(options: DashboardOptions = {}) {
     await instance.waitUntilExit();
   } finally {
     process.stdout.off('resize', handleResize);
-    // カーソルを再表示
+    // Restore cursor visibility
     process.stdout.write('\x1b[?25h');
     process.stdout.write(EXIT_ALT_SCREEN);
   }
