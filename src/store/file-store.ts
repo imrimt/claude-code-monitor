@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { WRITE_DEBOUNCE_MS } from '../constants.js';
+import { STOPPED_SESSION_GRACE_MS, WRITE_DEBOUNCE_MS } from '../constants.js';
 import type { HookEvent, Session, SessionStatus, StoreData } from '../types/index.js';
 import type { DetectedProcess } from '../utils/process-scanner.js';
 import { enrichSessionsWithTabNames } from '../utils/tab-name.js';
@@ -192,7 +192,18 @@ export function getSessions(): Session[] {
   const store = readStore();
 
   let hasChanges = false;
+  const now = Date.now();
   for (const [key, session] of Object.entries(store.sessions)) {
+    // Remove stopped sessions after grace period
+    if (session.status === 'stopped') {
+      const elapsed = now - new Date(session.updated_at).getTime();
+      if (elapsed > STOPPED_SESSION_GRACE_MS) {
+        delete store.sessions[key];
+        hasChanges = true;
+        continue;
+      }
+    }
+
     const isTtyStillAlive = isTtyAlive(session.tty);
 
     // Only remove sessions when TTY no longer exists

@@ -40,3 +40,6 @@ export const DEFAULT_SERVER_PORT = 3456;
 
 /** Polling interval for process scanning in milliseconds (5 seconds) */
 export const PROCESS_SCAN_INTERVAL_MS = 5_000;
+
+/** Grace period before removing stopped sessions in milliseconds (10 seconds) */
+export const STOPPED_SESSION_GRACE_MS = 10_000;

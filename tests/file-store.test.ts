@@ -325,6 +325,61 @@ describe('file-store', () => {
       expect(sessions[1].session_id).toBe('new');
     });
 
+    it('should remove stopped sessions after grace period', async () => {
+      const { writeStore, getSessions } = await import('../src/store/file-store.js');
+      const now = Date.now();
+
+      writeStore({
+        sessions: {
+          'stopped-old:/dev/ttys001': {
+            session_id: 'stopped-old',
+            cwd: '/tmp',
+            tty: '/dev/ttys001',
+            status: 'stopped',
+            created_at: new Date(now - 20_000).toISOString(),
+            updated_at: new Date(now - 15_000).toISOString(),
+          },
+          'active:/dev/ttys002': {
+            session_id: 'active',
+            cwd: '/tmp',
+            tty: '/dev/ttys002',
+            status: 'running',
+            updated_at: new Date(now).toISOString(),
+          },
+        },
+        updated_at: new Date().toISOString(),
+      });
+
+      const sessions = getSessions();
+
+      expect(sessions).toHaveLength(1);
+      expect(sessions[0].session_id).toBe('active');
+    });
+
+    it('should keep stopped sessions within grace period', async () => {
+      const { writeStore, getSessions } = await import('../src/store/file-store.js');
+      const now = Date.now();
+
+      writeStore({
+        sessions: {
+          'stopped-recent:/dev/ttys001': {
+            session_id: 'stopped-recent',
+            cwd: '/tmp',
+            tty: '/dev/ttys001',
+            status: 'stopped',
+            created_at: new Date(now - 5_000).toISOString(),
+            updated_at: new Date(now - 2_000).toISOString(),
+          },
+        },
+        updated_at: new Date().toISOString(),
+      });
+
+      const sessions = getSessions();
+
+      expect(sessions).toHaveLength(1);
+      expect(sessions[0].session_id).toBe('stopped-recent');
+    });
+
     it('should not remove sessions based on time (no timeout)', async () => {
       const { writeStore, getSessions } = await import('../src/store/file-store.js');
       const now = Date.now();
